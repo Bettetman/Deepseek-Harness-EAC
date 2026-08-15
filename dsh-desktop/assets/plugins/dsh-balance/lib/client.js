@@ -111,11 +111,11 @@ window.__ModuleLoader__.load({
 		 */
 		function apply(ctx) {
 			ensureCss();
-			ctx.effect(() => ctx.slots.register({
+			ctx.effect(() => ctx.slots.inject("conversation.composer.dock", () => ctx.slots.register({
 				name: "conversation.composer.dock",
 				id: "balance",
 				order: 100
-			}, BalanceDock), "dsh-balance: composer dock entry");
+			}, BalanceDock)), "dsh-balance: composer dock entry");
 		}
 
 		exports.apply = apply;

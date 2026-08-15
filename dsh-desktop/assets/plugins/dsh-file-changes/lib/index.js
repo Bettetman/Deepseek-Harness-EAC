@@ -1,12 +1,15 @@
 import { z } from "zod";
-import { opendir, stat, readFile } from "node:fs/promises";
+import { lstat, mkdir, open, opendir, readdir, realpath, rename, stat, readFile, writeFile } from "node:fs/promises";
 import { readdirSync, readFileSync } from "node:fs";
-import { isAbsolute, join, extname } from "node:path";
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Socket } from "node:net";
 import { zstdDecompressSync } from "node:zlib";
+import { withFileLock, writeFileAtomic } from "@deepseek-ai/dsh-atomic-write";
+import { isPathInside, pathKey, sameOriginMutation, validSegment } from "./ide-paths.js";
+import { addMcpEntry, deleteMcpEntry, listMcpEntries, toggleMcpEntry } from "./ide-management.js";
 
 const execFileP = promisify(execFile);
 
@@ -498,8 +501,500 @@ async function handleSessionCwdRoute(req, res) {
   sendJson(res, 200, { sessionId, cwd: findSessionCwd(sessionId) });
 }
 
+// ---------------------------------------------------------------------------
+// IDE 文件能力：三栏布局使用的只读查看、编辑、Git 状态和文件操作。
+// 所有路径必须落在 workspaceRegistry 已登记的工作区中；写请求还要求
+// application/json，并拒绝显式跨源 Origin，避免网页对本机服务做 CSRF。
+// ---------------------------------------------------------------------------
+
+const IDE_PREFIX = "/vscode-files";
+const IDE_READ_LIMIT = 2 * 1024 * 1024;
+const IDE_WRITE_LIMIT = 10 * 1024 * 1024;
+const IDE_HIGHLIGHT_LIMIT = 1024 * 1024;
+const IDE_SEARCH_DEPTH = 8;
+const IDE_SEARCH_ENTRIES = 20000;
+const IDE_SEARCH_RESULTS = 200;
+const IDE_COLLAPSED_DIRS = new Set([".git", "node_modules", "__pycache__", ".venv", "venv", "dist", ".next", ".dsh"]);
+
+function httpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+function isHiddenEntry(name) {
+  return name.startsWith(".") || IDE_COLLAPSED_DIRS.has(name);
+}
+
+function readJsonBody(req, cap = 12 * 1024 * 1024) {
+  return new Promise((resolveBody, rejectBody) => {
+    const chunks = [];
+    let size = 0;
+    let tooLarge = false;
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > cap) {
+        tooLarge = true;
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      if (tooLarge) return rejectBody(httpError(413, "request body too large"));
+      try {
+        resolveBody(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+      } catch {
+        rejectBody(httpError(400, "invalid JSON body"));
+      }
+    });
+    req.on("error", rejectBody);
+  });
+}
+
+async function registeredWorkspaceRoot(ctx, input) {
+  if (typeof input !== "string" || !isAbsolute(input)) throw httpError(400, "root must be an absolute path");
+  const canonical = await realpath(input);
+  let allowed = false;
+  for (const workspace of ctx.workspaceRegistry.list()) {
+    if (typeof workspace?.path !== "string") continue;
+    try {
+      if (pathKey(await realpath(workspace.path)) === pathKey(canonical)) {
+        allowed = true;
+        break;
+      }
+    } catch { /* stale workspace registration */ }
+  }
+  if (!allowed) throw httpError(403, "folder is not a registered DSH workspace");
+  return canonical;
+}
+
+async function existingWorkspaceTarget(root, input) {
+  if (typeof input !== "string" || !isAbsolute(input)) throw httpError(400, "path must be an absolute path");
+  const canonical = await realpath(input);
+  if (!isPathInside(root, canonical)) throw httpError(403, "path escapes the workspace");
+  return canonical;
+}
+
+async function newWorkspaceTarget(root, parentInput, name) {
+  if (!validSegment(name)) throw httpError(400, "name must be one path segment (1-120 characters)");
+  const parent = await existingWorkspaceTarget(root, parentInput);
+  if (!(await stat(parent)).isDirectory()) throw httpError(400, "parent is not a directory");
+  const target = resolve(parent, name);
+  if (!isPathInside(root, target) || target === root) throw httpError(403, "path escapes the workspace");
+  return target;
+}
+
+async function readFilePrefix(path, size) {
+  const length = Math.min(size, IDE_READ_LIMIT);
+  const handle = await open(path, "r");
+  try {
+    const buffer = Buffer.alloc(length);
+    const { bytesRead } = await handle.read(buffer, 0, length, 0);
+    return buffer.subarray(0, bytesRead);
+  } finally {
+    await handle.close();
+  }
+}
+
+function looksBinary(buffer) {
+  const n = Math.min(buffer.length, 8192);
+  if (n === 0) return false;
+  let nul = 0;
+  for (let i = 0; i < n; i++) if (buffer[i] === 0) nul++;
+  return nul / n > 0.01;
+}
+
+function revisionOf(info) {
+  return `${info.size}:${Math.trunc(info.mtimeMs)}`;
+}
+
+async function gitStatusOf(root) {
+  try {
+    const { stdout } = await execFileP("git", ["-C", root, "status", "--porcelain=v1", "-z", "--untracked-files=normal"], {
+      windowsHide: true,
+      timeout: 8000,
+      maxBuffer: 8 * 1024 * 1024
+    });
+    const statuses = {};
+    const records = String(stdout).split("\0");
+    for (let i = 0; i < records.length; i++) {
+      const record = records[i];
+      if (record.length < 4) continue;
+      const code = record.slice(0, 2).trim() || "??";
+      const file = record.slice(3);
+      if (file) statuses[file.replace(/\\/g, "/")] = code;
+      // In -z format a rename/copy record is followed by the old path. The
+      // first path is the destination, which is what the current tree renders.
+      if (code.includes("R") || code.includes("C")) i++;
+    }
+    return { ok: true, statuses };
+  } catch {
+    return { ok: false, notRepo: true, error: "not a git repository" };
+  }
+}
+
+async function searchWorkspace(root, query) {
+  const needle = query.toLowerCase();
+  const results = [];
+  let visited = 0;
+  async function walk(dir, depth) {
+    if (depth > IDE_SEARCH_DEPTH || visited >= IDE_SEARCH_ENTRIES || results.length >= IDE_SEARCH_RESULTS) return;
+    let entries;
+    try { entries = await readdir(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      if (visited++ >= IDE_SEARCH_ENTRIES || results.length >= IDE_SEARCH_RESULTS) return;
+      if (isHiddenEntry(entry.name)) continue;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) await walk(full, depth + 1);
+      else if (entry.isFile() && entry.name.toLowerCase().includes(needle)) {
+        results.push({ name: entry.name, path: full, rel: relative(root, full).split(sep).join("/") });
+      }
+    }
+  }
+  await walk(root, 0);
+  return results;
+}
+
+const IDE_LANGS = {
+  js: "javascript", jsx: "jsx", ts: "typescript", tsx: "tsx", mjs: "javascript", cjs: "javascript",
+  html: "html", htm: "html", xml: "xml", svg: "xml", vue: "vue", css: "css", scss: "scss", less: "less",
+  json: "json", jsonc: "jsonc", yml: "yaml", yaml: "yaml", md: "markdown", py: "python", sh: "shellscript",
+  bash: "shellscript", zsh: "shellscript", go: "go", rs: "rust", java: "java", c: "c", h: "c", cpp: "cpp",
+  hpp: "cpp", sql: "sql", toml: "toml", ini: "ini"
+};
+let shikiPromise;
+function loadShiki() {
+  shikiPromise ||= import("shiki");
+  return shikiPromise;
+}
+
+function recycleWorkspaceEntry(target, isDirectory) {
+  if (process.platform === "win32") {
+    const script = isDirectory
+      ? 'Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($env:DSH_DELETE_PATH, "OnlyErrorDialogs", "SendToRecycleBin")'
+      : 'Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($env:DSH_DELETE_PATH, "OnlyErrorDialogs", "SendToRecycleBin")';
+    return execFileP("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+      env: { ...process.env, DSH_DELETE_PATH: target },
+      windowsHide: true,
+      timeout: 60000
+    });
+  }
+  if (process.platform === "darwin") {
+    // Pass the path as argv instead of interpolating it into AppleScript, so
+    // quotes and other filename characters cannot become script source.
+    return execFileP("osascript", [
+      "-e", "on run argv",
+      "-e", 'tell application "Finder" to delete POSIX file (item 1 of argv)',
+      "-e", "end run",
+      target
+    ], { timeout: 60000, maxBuffer: 1024 * 1024 });
+  }
+  if (process.platform === "linux") {
+    return execFileP("gio", ["trash", "--", target], { timeout: 60000, maxBuffer: 1024 * 1024 });
+  }
+  throw httpError(501, "moving files to the recycle bin is unsupported on this platform");
+}
+
+function ideErrorStatus(error) {
+  if (Number.isInteger(error?.status)) return error.status;
+  if (["ENOENT", "ENOTDIR"].includes(error?.code)) return 404;
+  if (["EEXIST", "ENOTEMPTY"].includes(error?.code)) return 409;
+  if (["EACCES", "EPERM"].includes(error?.code)) return 403;
+  return 500;
+}
+
+// ---------------------------------------------------------------------------
+// 设置页管理：Skill 只管理 <DSH_HOME>/skills 的顶层条目；MCP 直接读写
+// profiles/web/cordis.patch.yml 中 @deepseek-ai/dsh-mcp-client 的 loader 行。
+// 不创建第二套 mcp-servers.json，避免运行配置分叉。
+// ---------------------------------------------------------------------------
+
+function dshHomeRoot() {
+  return resolve(process.env.DSH_HOME || join(homedir(), ".dsh"));
+}
+
+function globalSkillsRoot() {
+  return join(dshHomeRoot(), "skills");
+}
+
+function webPatchFile() {
+  return join(dshHomeRoot(), "profiles", "web", "cordis.patch.yml");
+}
+
+async function regularFile(path) {
+  try {
+    const info = await lstat(path);
+    return info.isFile() && !info.isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+async function listManagedSkills() {
+  const root = globalSkillsRoot();
+  let entries;
+  try { entries = await readdir(root, { withFileTypes: true }); }
+  catch (error) {
+    if (error?.code === "ENOENT") return [];
+    throw error;
+  }
+  const skills = [];
+  for (const entry of entries) {
+    if (entry.isSymbolicLink() || !validSegment(entry.name)) continue;
+    const target = join(root, entry.name);
+    if (entry.isDirectory()) {
+      const enabled = await regularFile(join(target, "SKILL.md"));
+      const disabled = await regularFile(join(target, "SKILL.md.disabled"));
+      if (!enabled && !disabled) continue;
+      skills.push({ id: entry.name, name: entry.name, kind: "dir", enabled, location: `skills/${entry.name}` });
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    if (entry.name.endsWith(".md.disabled")) {
+      skills.push({ id: entry.name, name: entry.name.slice(0, -".disabled".length), kind: "file", enabled: false, location: `skills/${entry.name}` });
+    } else if (entry.name.endsWith(".md")) {
+      skills.push({ id: entry.name, name: entry.name, kind: "file", enabled: true, location: `skills/${entry.name}` });
+    }
+  }
+  skills.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  return skills;
+}
+
+async function managedSkillTarget(id) {
+  if (!validSegment(id)) throw httpError(400, "invalid Skill id");
+  const root = globalSkillsRoot();
+  await mkdir(root, { recursive: true, mode: 0o700 });
+  const target = join(root, id);
+  const info = await lstat(target);
+  if (info.isSymbolicLink()) throw httpError(403, "symbolic-link Skills cannot be managed here");
+  const canonicalRoot = await realpath(root);
+  const canonicalTarget = await realpath(target);
+  if (!isPathInside(canonicalRoot, canonicalTarget) || pathKey(canonicalRoot) === pathKey(canonicalTarget)) {
+    throw httpError(403, "Skill path escapes DSH_HOME/skills");
+  }
+  return { target: canonicalTarget, info };
+}
+
+async function toggleManagedSkill(id) {
+  const { target, info } = await managedSkillTarget(id);
+  if (info.isDirectory()) {
+    const on = join(target, "SKILL.md");
+    const off = join(target, "SKILL.md.disabled");
+    if (await regularFile(on)) {
+      if (await regularFile(off)) throw httpError(409, "both SKILL.md and SKILL.md.disabled exist");
+      await rename(on, off);
+      return false;
+    }
+    if (await regularFile(off)) {
+      await rename(off, on);
+      return true;
+    }
+    throw httpError(400, "Skill directory has no manageable SKILL.md");
+  }
+  if (!info.isFile()) throw httpError(400, "Skill must be a file or directory");
+  if (target.endsWith(".md.disabled")) {
+    const next = target.slice(0, -".disabled".length);
+    try { await lstat(next); throw httpError(409, "enabled Skill file already exists"); }
+    catch (error) { if (error?.code !== "ENOENT") throw error; }
+    await rename(target, next);
+    return true;
+  }
+  if (!target.endsWith(".md")) throw httpError(400, "unsupported Skill file name");
+  const next = target + ".disabled";
+  try { await lstat(next); throw httpError(409, "disabled Skill file already exists"); }
+  catch (error) { if (error?.code !== "ENOENT") throw error; }
+  await rename(target, next);
+  return false;
+}
+
+async function deleteManagedSkill(id) {
+  const { target, info } = await managedSkillTarget(id);
+  await recycleWorkspaceEntry(target, info.isDirectory());
+}
+
+async function readWebPatch() {
+  try { return await readFile(webPatchFile(), "utf8"); }
+  catch (error) {
+    if (error?.code === "ENOENT") return "";
+    throw error;
+  }
+}
+
+async function mutateWebPatch(operation) {
+  const file = webPatchFile();
+  await mkdir(dirname(file), { recursive: true, mode: 0o700 });
+  return withFileLock(file, async () => {
+    let before = "";
+    try { before = await readFile(file, "utf8"); }
+    catch (error) { if (error?.code !== "ENOENT") throw error; }
+    const result = operation(before);
+    if (typeof result?.patch !== "string") throw httpError(500, "MCP patch operation returned no content");
+    if (result.patch !== before) await writeFileAtomic(file, result.patch, { mode: 0o600, dirMode: 0o700 });
+    return result;
+  });
+}
+
+function managementError(error) {
+  if (Number.isInteger(error?.status)) return error;
+  const message = String(error?.message || error);
+  if (/not found/i.test(message)) return httpError(404, message);
+  if (/already exists|duplicate/i.test(message)) return httpError(409, message);
+  return httpError(400, message);
+}
+
+async function handleIdeRoute(ctx, req, res) {
+  if (!isLoopback(req)) return sendJson(res, 403, { ok: false, error: "forbidden" });
+  let url;
+  try { url = new URL(req.url, "http://127.0.0.1"); }
+  catch { return sendJson(res, 400, { ok: false, error: "bad request URL" }); }
+  try {
+    if (req.method === "GET") {
+      if (url.pathname === IDE_PREFIX + "/skills") {
+        return sendJson(res, 200, { ok: true, root: "DSH_HOME/skills", skills: await listManagedSkills() });
+      }
+      if (url.pathname === IDE_PREFIX + "/mcp") {
+        return sendJson(res, 200, { ok: true, source: "profiles/web/cordis.patch.yml", servers: listMcpEntries(await readWebPatch()) });
+      }
+      const root = await registeredWorkspaceRoot(ctx, url.searchParams.get("root") || "");
+      const target = await existingWorkspaceTarget(root, url.searchParams.get("path") || "");
+      if (url.pathname === IDE_PREFIX + "/list") {
+        if (!(await stat(target)).isDirectory()) throw httpError(400, "path is not a directory");
+        const entries = await readdir(target, { withFileTypes: true });
+        const dirs = [];
+        const files = [];
+        for (const entry of entries) {
+          const full = join(target, entry.name);
+          const hidden = isHiddenEntry(entry.name);
+          if (entry.isDirectory()) dirs.push({ name: entry.name, path: full, hidden });
+          else if (entry.isFile()) {
+            let info;
+            try { info = await stat(full); } catch { continue; }
+            files.push({ name: entry.name, path: full, size: info.size, mtimeMs: info.mtimeMs, hidden });
+          }
+        }
+        dirs.sort((a, b) => a.name.localeCompare(b.name));
+        files.sort((a, b) => a.name.localeCompare(b.name));
+        return sendJson(res, 200, { ok: true, path: target, dirs, files });
+      }
+      if (url.pathname === IDE_PREFIX + "/read") {
+        const before = await stat(target);
+        if (!before.isFile()) throw httpError(400, "path is not a file");
+        const buffer = await readFilePrefix(target, before.size);
+        const after = await stat(target);
+        if (revisionOf(before) !== revisionOf(after)) throw httpError(409, "file changed while reading; retry");
+        if (looksBinary(buffer)) return sendJson(res, 200, { ok: true, kind: "binary", content: "", size: after.size, revision: revisionOf(after) });
+        return sendJson(res, 200, {
+          ok: true,
+          kind: after.size > IDE_READ_LIMIT ? "too-large" : "text",
+          content: buffer.toString("utf8"),
+          size: after.size,
+          revision: revisionOf(after)
+        });
+      }
+      if (url.pathname === IDE_PREFIX + "/git") return sendJson(res, 200, await gitStatusOf(root));
+      if (url.pathname === IDE_PREFIX + "/search") {
+        const query = String(url.searchParams.get("q") || "").trim();
+        if (!query) throw httpError(400, "missing q");
+        return sendJson(res, 200, { ok: true, results: await searchWorkspace(root, query) });
+      }
+      if (url.pathname === IDE_PREFIX + "/highlight") {
+        const info = await stat(target);
+        if (!info.isFile()) throw httpError(400, "path is not a file");
+        if (info.size > IDE_HIGHLIGHT_LIMIT) return sendJson(res, 200, { ok: false, error: "too large to highlight" });
+        const buffer = await readFilePrefix(target, info.size);
+        if (looksBinary(buffer)) return sendJson(res, 200, { ok: false, error: "binary" });
+        const shiki = await loadShiki();
+        const extension = extname(target).slice(1).toLowerCase();
+        const html = await shiki.codeToHtml(buffer.toString("utf8"), {
+          lang: IDE_LANGS[extension] || "text",
+          theme: url.searchParams.get("theme") === "light" ? "github-light" : "github-dark"
+        });
+        return sendJson(res, 200, { ok: true, html });
+      }
+      throw httpError(404, "unknown vscode-files endpoint");
+    }
+
+    if (req.method !== "POST") throw httpError(405, "method not allowed");
+    if (!sameOriginMutation(req)) throw httpError(403, "same-origin application/json request required");
+    const managementRoute = url.pathname.startsWith(IDE_PREFIX + "/skills/") || url.pathname.startsWith(IDE_PREFIX + "/mcp/");
+    const body = await readJsonBody(req, managementRoute ? 256 * 1024 : 12 * 1024 * 1024);
+    if (url.pathname === IDE_PREFIX + "/skills/toggle") {
+      const enabled = await toggleManagedSkill(body?.id);
+      return sendJson(res, 200, { ok: true, enabled });
+    }
+    if (url.pathname === IDE_PREFIX + "/skills/delete") {
+      await deleteManagedSkill(body?.id);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (url.pathname === IDE_PREFIX + "/mcp/toggle") {
+      try {
+        const result = await mutateWebPatch((patch) => toggleMcpEntry(patch, body?.id));
+        return sendJson(res, 200, { ok: true, enabled: result.enabled, restartRequired: true });
+      } catch (error) { throw managementError(error); }
+    }
+    if (url.pathname === IDE_PREFIX + "/mcp/delete") {
+      try {
+        await mutateWebPatch((patch) => ({ patch: deleteMcpEntry(patch, body?.id) }));
+        return sendJson(res, 200, { ok: true, restartRequired: true });
+      } catch (error) { throw managementError(error); }
+    }
+    if (url.pathname === IDE_PREFIX + "/mcp/add") {
+      try {
+        const result = await mutateWebPatch((patch) => addMcpEntry(patch, body));
+        return sendJson(res, 200, { ok: true, entry: result.entry, restartRequired: true });
+      } catch (error) { throw managementError(error); }
+    }
+    const root = await registeredWorkspaceRoot(ctx, body?.root);
+    if (url.pathname === IDE_PREFIX + "/write") {
+      if (typeof body?.content !== "string") throw httpError(400, "body needs { root, path, content }");
+      if (Buffer.byteLength(body.content, "utf8") > IDE_WRITE_LIMIT) throw httpError(413, "content too large");
+      const target = await existingWorkspaceTarget(root, body.path);
+      let saved;
+      await withFileLock(target, async () => {
+        const info = await stat(target);
+        if (!info.isFile()) throw httpError(400, "path is not a file");
+        if (typeof body.expectedRevision === "string" && body.expectedRevision !== revisionOf(info)) {
+          throw httpError(409, "file changed on disk; reload it before saving");
+        }
+        await writeFileAtomic(target, body.content, { mode: info.mode & 0o777 });
+        saved = await stat(target);
+      });
+      return sendJson(res, 200, { ok: true, size: saved.size, revision: revisionOf(saved) });
+    }
+    if (url.pathname === IDE_PREFIX + "/mkdir" || url.pathname === IDE_PREFIX + "/mkfile") {
+      const target = await newWorkspaceTarget(root, body?.path, body?.name);
+      if (url.pathname.endsWith("/mkdir")) await mkdir(target);
+      else await writeFile(target, "", { flag: "wx", mode: 0o644 });
+      return sendJson(res, 200, { ok: true, path: target });
+    }
+    if (url.pathname === IDE_PREFIX + "/rename") {
+      const source = await existingWorkspaceTarget(root, body?.path);
+      if (pathKey(source) === pathKey(root)) throw httpError(403, "cannot rename the workspace root");
+      const target = await newWorkspaceTarget(root, dirname(source), body?.newName);
+      try {
+        await stat(target);
+        throw httpError(409, "a file or folder with that name already exists");
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+      }
+      await rename(source, target);
+      return sendJson(res, 200, { ok: true, path: target });
+    }
+    if (url.pathname === IDE_PREFIX + "/delete") {
+      const target = await existingWorkspaceTarget(root, body?.path);
+      if (pathKey(target) === pathKey(root)) throw httpError(403, "cannot delete the workspace root");
+      const info = await stat(target);
+      await recycleWorkspaceEntry(target, info.isDirectory());
+      return sendJson(res, 200, { ok: true });
+    }
+    throw httpError(404, "unknown vscode-files endpoint");
+  } catch (error) {
+    return sendJson(res, ideErrorStatus(error), { ok: false, error: String(error?.message || error) });
+  }
+}
+
 const name = "dsh-file-changes";
-const inject = ["sessionProjections", "webServer"];
+const inject = ["sessionProjections", "webServer", "workspaceRegistry"];
 
 function apply(ctx) {
   ctx.sessionProjections.register(fileChangesProjectionDefinition);
@@ -508,10 +1003,11 @@ function apply(ctx) {
     ctx.webServer.register({ kind: "exact", path: "/api/dsh-files/ports", handler: handlePortsRoute }),
     ctx.webServer.register({ kind: "exact", path: "/api/dsh-files/check", handler: handleCheckRoute }),
     ctx.webServer.register({ kind: "exact", path: "/api/dsh-files/session-cwd", handler: handleSessionCwdRoute }),
+    ctx.webServer.register({ kind: "prefix", path: IDE_PREFIX, handler: (req, res) => handleIdeRoute(ctx, req, res) }),
     // 注意：prefix 不能带尾部斜杠（webserver 按 prefix + "/" 匹配）。
     ctx.webServer.register({ kind: "prefix", path: STATIC_PREFIX.replace(/\/+$/, ""), handler: handleStaticRoute })
   ];
   return () => { for (const d of disposers) d(); };
 }
 
-export { apply, inject, name };
+export { apply, inject, isPathInside, name, sameOriginMutation, validSegment };

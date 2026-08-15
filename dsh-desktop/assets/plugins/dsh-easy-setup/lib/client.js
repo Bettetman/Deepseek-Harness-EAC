@@ -1,14 +1,11 @@
 /**
  * dsh-easy-setup — browser half.
  *
- * Three sections inside the Web UI settings page:
+ * Two consolidated sections inside the Web UI settings page:
  *
- *   1. 视觉模型（快速配置） — provider + model dropdowns over the
- *      `tool-vision` settings namespace (the dsh-tool-vision plugin's own
- *      section stays for advanced fields).
- *   2. 人设编辑 — a textarea over the real soul.md file through the
- *      easySetup remote; dsh-soul-md hot-reloads edits within ~300ms.
- *   3. 一键迁移 — pick a Codex / Claude Code folder (their install/config
+ *   1. 人设管理 — content editor plus dsh-soul-md persona parameters.
+ *   2. 高级设置 — skin management and one-click migration. Migration can
+ *      pick a Codex / Claude Code folder (their install/config
  *      dir or a project dir), register it as a workspace, open a fresh
  *      session there, and AUTO-SEND the migration instruction through the
  *      session-scoped conversation service; the agent then performs the
@@ -30,7 +27,7 @@ window.__ModuleLoader__.load({
       ".__es_field{display:flex;flex-direction:column;gap:4px}" +
       ".__es_label{font-size:12px;font-weight:600;color:var(--dsw-alias-label-primary)}" +
       ".__es_hint{font-size:11px;color:var(--dsw-alias-label-tertiary)}" +
-      ".__es_input,.__es_select,.__es_textarea{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:6px 10px;font-size:13px;box-sizing:border-box;width:100%}" +
+      ".__es_textarea{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:6px 10px;font-size:13px;box-sizing:border-box;width:100%}" +
       ".__es_textarea{min-height:220px;resize:vertical;font-family:var(--dsw-alias-font-mono,monospace);line-height:1.5}" +
       ".__es_row{display:flex;align-items:center;gap:8px}" +
       ".__es_actions{display:flex;gap:8px;align-items:center;margin-top:4px}" +
@@ -44,7 +41,16 @@ window.__ModuleLoader__.load({
       ".__es_path{font-size:11px;color:var(--dsw-alias-label-tertiary);word-break:break-all}" +
       ".__es_details{font-size:12px;color:var(--dsw-alias-label-tertiary)}" +
       ".__es_details summary{cursor:pointer;color:var(--dsw-alias-label-secondary)}" +
-      ".__es_prompt{white-space:pre-wrap;font-family:var(--dsw-alias-font-mono,monospace);font-size:11px;line-height:1.5;max-height:240px;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px 10px;background:var(--dsw-alias-bg-layer-2)}";
+      ".__es_prompt{white-space:pre-wrap;font-family:var(--dsw-alias-font-mono,monospace);font-size:11px;line-height:1.5;max-height:240px;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px 10px;background:var(--dsw-alias-bg-layer-2)}" +
+      ".__es_hub{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}" +
+      ".__es_tabs{display:flex;align-items:flex-end;gap:20px;border-bottom:1px solid var(--dsw-alias-border-l2)}" +
+      ".__es_tab{appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:13px;line-height:20px;padding:7px 2px 8px;cursor:pointer}" +
+      ".__es_tab:hover,.__es_tab[data-active=true]{color:var(--dsw-alias-label-primary)}" +
+      ".__es_tab[data-active=true]{border-bottom-color:var(--dsw-alias-state-business-primary)}" +
+      ".__es_panel{min-width:0}" +
+      ".__es_group{display:flex;flex-direction:column;gap:10px}" +
+      ".__es_group+.__es_group{border-top:1px solid var(--dsw-alias-border-l2);padding-top:16px}" +
+      ".__es_groupTitle{margin:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600;line-height:22px}";
     var tagId = "dsh-easy-setup/main.css";
     if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
       var tag = document.createElement("style");
@@ -57,24 +63,19 @@ window.__ModuleLoader__.load({
     // ── locale ────────────────────────────────────────────────────────────
     var NS = "easySetup";
     var zh = {
-      visionNav: "视觉模型（快速配置）",
-      visionIntro: "选择视觉模型提供商与模型，保存后即时生效。主模型保持不变，图片会自动交给这里的视觉模型分析（由 dsh-tool-vision 插件桥接）。",
-      provider: "提供商",
-      model: "视觉模型",
-      modelCustom: "自定义模型 ID",
-      apiKey: "API Key",
-      apiKeyHint: "留空保持当前密钥；密钥只写不读。",
       save: "保存",
       saved: "已保存，即时生效",
       saving: "保存中…",
-      error: "保存失败",
-      unavailable: "视觉插件设置不可用（dsh-tool-vision 未启用？）",
-      personaNav: "人设编辑",
+      personaNav: "人设管理",
+      personaContent: "人设内容",
+      personaSettings: "人设参数",
       personaIntro: "直接编辑人设卡（soul.md）：保存后约 300ms 热重载生效，无需重启。文件变更也会被 dsh-soul-md 自动监听。",
       personaBraceWarn: "内容包含双花括号定界符（提示词变量语法，soul-md 无转义），保存后对话会渲染失败——请改写这些位置后再保存。",
       loadFail: "读取人设失败",
       saveFail: "保存失败",
       missing: "（文件尚不存在，保存时将创建）",
+      advancedNav: "高级设置",
+      skinNav: "皮肤",
       migrationNav: "一键迁移（夺舍）",
       migrationIntro: "从 Codex / Claude Code 一键迁移：选择它们的安装/配置目录（如 ~/.codex、~/.claude，也可以是普通项目目录）→ 目录自动注册为工作区并新建对话 → 迁移指令自动发送，AI 会在对话里把技能（skills）、MCP 服务器和长期记忆（CLAUDE.md / AGENTS.md）全部搬进 DSH，每一步的工具调用全程可视化。",
       start: "选择文件夹并开始迁移",
@@ -86,24 +87,19 @@ window.__ModuleLoader__.load({
       viewPrompt: "查看迁移指令内容"
     };
     var en = {
-      visionNav: "Vision (Quick Setup)",
-      visionIntro: "Pick a vision provider and model; applies immediately. Your main model stays unchanged — images are bridged to this vision model by the dsh-tool-vision plugin.",
-      provider: "Provider",
-      model: "Vision model",
-      modelCustom: "Custom model id",
-      apiKey: "API Key",
-      apiKeyHint: "Leave blank to keep the current key; write-only.",
       save: "Save",
       saved: "Saved — effective immediately",
       saving: "Saving…",
-      error: "Save failed",
-      unavailable: "Vision settings unavailable (dsh-tool-vision not enabled?)",
-      personaNav: "Persona Editor",
+      personaNav: "Persona Management",
+      personaContent: "Persona Content",
+      personaSettings: "Persona Settings",
       personaIntro: "Edit the persona card (soul.md) directly; hot-reloads within ~300ms of saving — no restart needed.",
       personaBraceWarn: "The content contains double-brace delimiters (prompt-variable syntax; soul-md has no escape) — sending will fail to render. Rewrite those spots before saving.",
       loadFail: "Failed to load persona",
       saveFail: "Save failed",
       missing: "(file missing; created on save)",
+      advancedNav: "Advanced Settings",
+      skinNav: "Skins",
       migrationNav: "One-click Migration",
       migrationIntro: "Migrate from Codex / Claude Code in one click: pick their install/config folder (e.g. ~/.codex, ~/.claude — an ordinary project folder works too) → it becomes a workspace with a fresh session → the migration prompt is sent automatically, and the agent moves skills, MCP servers and memories into DSH with every tool call visible in the conversation.",
       start: "Pick folder & start",
@@ -114,16 +110,6 @@ window.__ModuleLoader__.load({
       copyOnly: "Copy prompt only",
       viewPrompt: "View the migration prompt"
     };
-
-    // ── vision provider presets (UI-side constant) ───────────────────────
-    var PROVIDERS = [
-      { id: "zhipu", label: "智谱 AI（GLM）", baseURL: "https://open.bigmodel.cn/api/paas/v4", keyEnv: "GLM_API_KEY", models: ["glm-4v-flash", "glm-4v-plus", "glm-4v"] },
-      { id: "dashscope", label: "阿里云百炼（通义千问 VL）", baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", keyEnv: "DASHSCOPE_API_KEY", models: ["qwen-vl-plus", "qwen-vl-max", "qwen2.5-vl-72b-instruct"] },
-      { id: "openai", label: "OpenAI", baseURL: "https://api.openai.com/v1", keyEnv: "OPENAI_API_KEY", models: ["gpt-4o-mini", "gpt-4o"] },
-      { id: "siliconflow", label: "硅基流动 SiliconFlow", baseURL: "https://api.siliconflow.cn/v1", keyEnv: "SILICONFLOW_API_KEY", models: ["Qwen/Qwen2.5-VL-32B-Instruct", "Pro/Qwen/Qwen2.5-VL-7B-Instruct"] },
-      { id: "moonshot", label: "月之暗面 Kimi", baseURL: "https://api.moonshot.cn/v1", keyEnv: "MOONSHOT_API_KEY", models: ["moonshot-v1-8k-vision-preview"] },
-      { id: "custom", label: "自定义（手动填写）", baseURL: "", keyEnv: "VISION_API_KEY", models: [] }
-    ];
 
     // ── remote face (easySetup) ───────────────────────────────────────────
     var looseCodec = () => ({
@@ -149,124 +135,41 @@ window.__ModuleLoader__.load({
       ]
     };
 
-    // ── section 1: vision quick setup ────────────────────────────────────
-    function VisionQuick(props) {
-      var t = props.t;
-      var scope = props.scope;
-      // Minimal snapshot subscription (same pattern as the tool-vision UI).
-      var state = react.useState(function () { return scope.getSnapshot(); });
-      var snapshot = state[0];
-      var setSnapshot = state[1];
-      react.useEffect(function () {
-        var alive = true;
-        scope.load && scope.load();
-        var sync = function () { if (alive) setSnapshot(scope.getSnapshot()); };
-        var un = typeof scope.subscribe === "function" ? scope.subscribe(sync) : null;
-        return function () { alive = false; if (un) un(); };
-      }, [scope]);
+    function SettingsHub(props) {
+      var tabs = props.tabs;
+      var activeState = react.useState(tabs[0].id);
+      var active = activeState[0];
+      var setActive = activeState[1];
+      return h("div", { className: "__es_hub" },
+        h("div", { className: "__es_tabs", role: "tablist" }, tabs.map(function (tab) {
+          return h("button", {
+            key: tab.id,
+            type: "button",
+            role: "tab",
+            className: "__es_tab",
+            "aria-selected": active === tab.id,
+            "data-active": active === tab.id,
+            onClick: function () { setActive(tab.id); }
+          }, tab.label);
+        })),
+        h("div", { className: "__es_panel", role: "tabpanel" }, props.renderSlot(props.slot, {}, { only: active }))
+      );
+    }
 
-      var value = snapshot.value || {};
-      var currentProvider = PROVIDERS.find(function (p) { return p.baseURL && p.baseURL === value.baseURL; }) || PROVIDERS.find(function (p) { return p.id === "custom"; });
-      var currentModel = typeof value.model === "string" ? value.model : "";
-      var preset = PROVIDERS.find(function (p) { return p.models.indexOf(currentModel) >= 0 && p === currentProvider; });
-      var provState = react.useState(currentProvider ? currentProvider.id : "custom");
-      var providerId = provState[0];
-      var setProviderId = provState[1];
-      var modelState = react.useState(preset ? "" : currentModel);
-      var customModel = modelState[0];
-      var setCustomModel = modelState[1];
-      var baseState = react.useState(value.baseURL || "");
-      var customBase = baseState[0];
-      var setCustomBase = baseState[1];
-      var keyState = react.useState("");
-      var apiKey = keyState[0];
-      var setApiKey = keyState[1];
-      var busyState = react.useState(null);
-      var busy = busyState[0];
-      var setBusy = busyState[1];
-
-      react.useEffect(function () {
-        setProviderId(currentProvider ? currentProvider.id : "custom");
-        setCustomModel(preset ? "" : currentModel);
-        setCustomBase(value.baseURL || "");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [snapshot.status === "ready"]);
-
-      if (snapshot.status === "unavailable") {
-        return h("p", { className: "__es_hint" }, t("unavailable"));
-      }
-      if (snapshot.status !== "ready") return h("p", { className: "__es_status" }, "…");
-
-      var provider = PROVIDERS.find(function (p) { return p.id === providerId; }) || PROVIDERS[0];
-      var model = customModel || (provider.models[0] || "");
-      var baseURL = provider.id === "custom" ? customBase : provider.baseURL;
-
-      function onSave() {
-        setBusy("saving");
-        var writes = [
-          baseURL && baseURL !== value.baseURL ? scope.set("baseURL", baseURL) : Promise.resolve(),
-          model && model !== value.model ? scope.set("model", model) : Promise.resolve(),
-          provider.keyEnv && provider.keyEnv !== value.apiKeyEnv ? scope.set("apiKeyEnv", provider.keyEnv) : Promise.resolve(),
-          apiKey ? scope.set("apiKey", apiKey) : Promise.resolve()
-        ];
-        Promise.all(writes).then(function () {
-          setBusy("saved");
-          setApiKey("");
-          scope.load && scope.load();
-        }).catch(function (e) {
-          setBusy("error:" + String(e && e.message || e));
-        });
-      }
-
-      return h("div", { className: "__es_root" },
-        h("p", { className: "__es_hint", style: { margin: 0 } }, t("visionIntro")),
-        h("label", { className: "__es_field" },
-          h("span", { className: "__es_label" }, t("provider")),
-          h("select", {
-            className: "__es_select",
-            value: providerId,
-            onChange: function (e) {
-              setProviderId(e.target.value);
-              setCustomModel("");
-              var next = PROVIDERS.find(function (p) { return p.id === e.target.value; });
-              if (next && next.id !== "custom") setCustomBase(next.baseURL);
-            }
-          }, PROVIDERS.map(function (p) {
-            return h("option", { key: p.id, value: p.id }, p.label);
-          }))
+    function PersonaHub(props) {
+      return h("div", { className: "__es_hub" },
+        h("section", { className: "__es_group" },
+          h("h3", { className: "__es_groupTitle" }, props.t("personaContent")),
+          props.renderSlot("settings.persona.panel", {}, { only: "content" })
         ),
-        provider.id === "custom" ? h("label", { className: "__es_field" },
-          h("span", { className: "__es_label" }, "API Base URL"),
-          h("input", { className: "__es_input", value: customBase, placeholder: "https://api.example.com/v1", onChange: function (e) { setCustomBase(e.target.value); } })
-        ) : null,
-        provider.models.length > 0 ? h("label", { className: "__es_field" },
-          h("span", { className: "__es_label" }, t("model")),
-          h("select", {
-            className: "__es_select",
-            value: provider.models.indexOf(customModel) >= 0 || customModel === "" ? customModel || provider.models[0] : "__custom",
-            onChange: function (e) { setCustomModel(e.target.value === "__custom" ? "" : e.target.value); }
-          },
-            provider.models.map(function (m) { return h("option", { key: m, value: m }, m); }),
-            h("option", { key: "__custom", value: "__custom" }, t("modelCustom") + (provider.models.indexOf(currentModel) >= 0 && currentModel ? "（当前: " + currentModel + "）" : "")))
-        ) : null,
-        (provider.models.length === 0 || customModel === "") ? h("label", { className: "__es_field" },
-          h("span", { className: "__es_label" }, provider.models.length > 0 ? t("modelCustom") : t("model")),
-          h("input", { className: "__es_input", value: customModel, placeholder: "model-id", onChange: function (e) { setCustomModel(e.target.value); } })
-        ) : null,
-        h("label", { className: "__es_field" },
-          h("span", { className: "__es_label" }, t("apiKey")),
-          h("input", { className: "__es_input", type: "password", value: apiKey, placeholder: "sk-…", onChange: function (e) { setApiKey(e.target.value); } }),
-          h("span", { className: "__es_hint" }, t("apiKeyHint"))
-        ),
-        h("div", { className: "__es_actions" },
-          h("button", { className: "__es_btn __es_btnPrimary", disabled: busy === "saving" || !model || !baseURL, onClick: onSave }, busy === "saving" ? t("saving") : t("save")),
-          busy === "saved" ? h("span", { className: "__es_ok" }, t("saved")) : null,
-          typeof busy === "string" && busy.indexOf("error:") === 0 ? h("span", { className: "__es_error" }, t("error") + ": " + busy.slice(6)) : null
+        h("section", { className: "__es_group" },
+          h("h3", { className: "__es_groupTitle" }, props.t("personaSettings")),
+          props.renderSlot("settings.persona.panel", {}, { only: "settings" })
         )
       );
     }
 
-    // ── section 2: persona editor ────────────────────────────────────────
+    // ── section 1: persona editor ────────────────────────────────────────
     function PersonaEditor(props) {
       var t = props.t;
       var remote = props.remote;
@@ -332,7 +235,7 @@ window.__ModuleLoader__.load({
       );
     }
 
-    // ── section 3: one-click migration ───────────────────────────────────
+    // ── section 2: one-click migration ───────────────────────────────────
     function Migration(props) {
       var t = props.t;
       var ctx = props.ctx;
@@ -419,7 +322,7 @@ window.__ModuleLoader__.load({
     }
 
     // ── plugin ────────────────────────────────────────────────────────────
-    var inject = ["slots", "locale", "remote", "settingsScope", "sessions", "workspaces"];
+    var inject = ["slots", "locale", "remote", "sessions", "workspaces"];
 
     function apply(ctx) {
       var t = ctx.locale.bind(NS);
@@ -442,24 +345,36 @@ window.__ModuleLoader__.load({
         });
       };
 
-      var visionScope = ctx.settingsScope.bind({ namespace: "tool-vision" });
+      var modelLabel = function () { return ctx.locale.getSnapshot().active === "zh" ? "模型管理" : "Model Management"; };
+      var pluginLabel = function () { return ctx.locale.getSnapshot().active === "zh" ? "插件管理" : "Plugin Management"; };
+      var renameBuiltInSections = function () {
+        var entries = ctx.slots.entries("settings.section");
+        for (var i = 0; i < entries.length; i += 1) {
+          if (entries[i].options.id === "models") entries[i].options.label = modelLabel;
+          if (entries[i].options.id === "plugins") entries[i].options.label = pluginLabel;
+        }
+      };
+      renameBuiltInSections();
+      ctx.effect(function () { return ctx.slots.subscribe("settings.section", renameBuiltInSections); }, "dsh-easy-setup: managed built-in labels");
+
       ctx.slots.inject("settings.section", function () {
         return ctx.slots.register({
           name: "settings.section",
-          id: "easy-vision",
+          id: "persona",
           order: 24,
-          label: function () { return t("visionNav"); },
-          locale: NS
+          label: function () { return t("personaNav"); },
+          locale: NS,
+          children: { "settings.persona.panel": { kind: "list", scope: "root" } }
         }, function (props) {
-          return h(VisionQuick, Object.assign({}, props, { scope: visionScope }));
+          return h(PersonaHub, Object.assign({}, props, { t: t }));
         });
       });
-      ctx.slots.inject("settings.section", function () {
+      ctx.slots.inject("settings.persona.panel", function () {
         return ctx.slots.register({
-          name: "settings.section",
-          id: "easy-persona",
-          order: 26,
-          label: function () { return t("personaNav"); },
+          name: "settings.persona.panel",
+          id: "content",
+          order: 0,
+          label: function () { return t("personaContent"); },
           locale: NS
         }, function (props) {
           return h(PersonaEditor, Object.assign({}, props, { remote: remote }));
@@ -468,8 +383,23 @@ window.__ModuleLoader__.load({
       ctx.slots.inject("settings.section", function () {
         return ctx.slots.register({
           name: "settings.section",
-          id: "easy-migration",
-          order: 27,
+          id: "advanced",
+          order: 90,
+          label: function () { return t("advancedNav"); },
+          locale: NS,
+          children: { "settings.advanced.panel": { kind: "list", scope: "root" } }
+        }, function (props) {
+          return h(SettingsHub, Object.assign({}, props, { slot: "settings.advanced.panel", tabs: [
+            { id: "skin", label: t("skinNav") },
+            { id: "migration", label: t("migrationNav") }
+          ] }));
+        });
+      });
+      ctx.slots.inject("settings.advanced.panel", function () {
+        return ctx.slots.register({
+          name: "settings.advanced.panel",
+          id: "migration",
+          order: 10,
           label: function () { return t("migrationNav"); },
           locale: NS
         }, function (props) {

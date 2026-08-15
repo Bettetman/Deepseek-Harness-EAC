@@ -48,6 +48,7 @@ window.__ModuleLoader__.load({
     var inject = ["slots", "locale", "settingsScope"];
     var zh = {
       nav: "人设卡",
+      personaSettings: "人设参数",
       intro: "soul.md 风格人设卡：把一份 Markdown 人设文件渲染为系统提示词段落（soul:persona），文件变更热重载。修改配置后即时生效。",
       fallbackHint: "文件缺失/不可读时使用的文本；留空则不注册段落。",
       orderHint: "段落顺序；0 渲染在部署 persona 之后。",
@@ -64,6 +65,7 @@ window.__ModuleLoader__.load({
     };
     var en = {
       nav: "Persona Card",
+      personaSettings: "Persona Settings",
       intro: "soul.md-style persona card: renders a Markdown file as the soul:persona system-prompt section, hot-reloaded on change. Edits apply immediately.",
       fallbackHint: "Text used when the file is missing/unreadable; empty means no section.",
       orderHint: "Prompt section order; 0 renders after the deployment persona slot.",
@@ -227,12 +229,12 @@ window.__ModuleLoader__.load({
       var t = ctx.locale.bind(NS);
       ctx.effect(function () { return ctx.locale.register(NS, { zh: zh, en: en }); }, "dsh-soul-md: dictionaries");
       var scope = ctx.settingsScope.bind({ namespace: "soul-md" });
-      ctx.slots.inject("settings.section", function () {
+      ctx.slots.inject("settings.persona.panel", function () {
         return ctx.slots.register({
-          name: "settings.section",
-          id: "soul-md",
-          order: 24,
-          label: function () { return t("nav"); },
+          name: "settings.persona.panel",
+          id: "settings",
+          order: 10,
+          label: function () { return t("personaSettings"); },
           locale: NS
         }, function (props) {
           return h(SoulSection, Object.assign({}, props, { scope: scope }));

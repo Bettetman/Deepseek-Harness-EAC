@@ -92,4 +92,127 @@ function removeBundledRowDuplicates(patch, rowIds, bundleNames) {
   return { patch: text, removed };
 }
 
-module.exports = { configLinesFor, healSoulMdPatchRow, removeBundledRowDuplicates };
+const IDE_LAYOUT_BEGIN = '# EAC IDE layout BEGIN (managed; do not edit inside)';
+const IDE_LAYOUT_END = '# EAC IDE layout END';
+
+/**
+ * Remove pre-managed IDE layout rows written by an earlier/manual install.
+ * Leaving either row beside the managed block creates a duplicate loader id
+ * (or two patches for the stock layout) and aborts the entire web profile.
+ */
+function removeLegacyIdeLayoutRows(patch) {
+  const lines = patch.split(/\r?\n/);
+  const out = [];
+  for (let i = 0; i < lines.length;) {
+    const line = lines[i];
+    let end = i + 1;
+    while (end < lines.length && !/^-\s/.test(lines[end]) && !/^#/.test(lines[end])) end++;
+    const block = lines.slice(i, end);
+    const legacyDisable = /^-\s*id:\s*ui-layout\b/.test(line)
+      && block.some((row) => /^\s+disabled:\s*true\s*$/.test(row));
+    if (legacyDisable) {
+      i = end;
+      continue;
+    }
+    if (/^-\s*insert:\s*$/.test(line)) {
+      const body = block.slice(1);
+      const kept = [];
+      let removed = false;
+      for (let j = 0; j < body.length;) {
+        const match = /^(\s*)- id:\s*ide-layout\b/.exec(body[j]);
+        if (!match) {
+          kept.push(body[j++]);
+          continue;
+        }
+        removed = true;
+        const rowIndent = match[1].length;
+        j++;
+        while (j < body.length) {
+          const next = /^(\s*)- id:\s*/.exec(body[j]);
+          if (next && next[1].length <= rowIndent) break;
+          j++;
+        }
+      }
+      if (removed) {
+        // A manually assembled insert block may contain several plugin rows.
+        // Remove only ide-layout; never discard unrelated sibling rows.
+        if (kept.some((row) => /^\s+- id:\s*/.test(row))) out.push(line, ...kept);
+        i = end;
+        continue;
+      }
+    }
+    out.push(line);
+    i++;
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+/**
+ * Replace the stock root layout with EAC's bundled IDE root without touching
+ * the official installation. The profile overlay disables the stock row and
+ * inserts the alternative under a distinct id, so upgrades remain reversible.
+ */
+function ensureIdeLayoutPatch(patch) {
+  const input = typeof patch === 'string' ? patch : '';
+  let clean = input;
+  const start = clean.indexOf(IDE_LAYOUT_BEGIN);
+  if (start !== -1) {
+    const end = clean.indexOf(IDE_LAYOUT_END, start + IDE_LAYOUT_BEGIN.length);
+    clean = end === -1
+      ? clean.slice(0, start)
+      : clean.slice(0, start) + clean.slice(end + IDE_LAYOUT_END.length);
+  }
+  clean = removeLegacyIdeLayoutRows(clean);
+  clean = clean.replace(/\n{3,}/g, '\n\n').trimEnd();
+  const block = [
+    IDE_LAYOUT_BEGIN,
+    '- id: ui-layout',
+    '  disabled: true',
+    '- insert:',
+    '    - id: ide-layout',
+    "      name: '@anoslide/dsh-client-vscode-layout'",
+    IDE_LAYOUT_END,
+    ''
+  ].join('\n');
+  return (clean ? clean + '\n\n' : '') + block;
+}
+
+/** Force one inserted profile row disabled without rewriting its other config. */
+function ensureInsertRowDisabled(patch, rowId) {
+  if (typeof patch !== 'string' || patch === '' || typeof rowId !== 'string' || rowId === '') {
+    return { patch, changed: false };
+  }
+  const escaped = rowId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const lines = patch.split(/\r?\n/);
+  let changed = false;
+  for (let i = 0; i < lines.length; i++) {
+    const match = new RegExp(`^(\\s+)- id:\\s*${escaped}\\b`).exec(lines[i]);
+    if (!match) continue;
+    const rowIndent = match[1].length;
+    let end = i + 1;
+    while (end < lines.length) {
+      const sibling = /^(\s*)- id:\s*/.exec(lines[end]);
+      if (sibling && sibling[1].length <= rowIndent) break;
+      if (/^-\s/.test(lines[end]) || /^#/.test(lines[end])) break;
+      end++;
+    }
+    const disabled = lines.slice(i + 1, end).findIndex((line) => {
+      const m = /^(\s*)disabled:\s*/.exec(line);
+      return m && m[1].length > rowIndent;
+    });
+    if (disabled !== -1) {
+      const at = i + 1 + disabled;
+      const next = lines[at].replace(/disabled:\s*\S+\s*$/, 'disabled: true');
+      if (next !== lines[at]) {
+        lines[at] = next;
+        changed = true;
+      }
+    } else {
+      lines.splice(i + 1, 0, `${' '.repeat(rowIndent + 2)}disabled: true`);
+      changed = true;
+    }
+  }
+  return { patch: lines.join('\n'), changed };
+}
+
+module.exports = { configLinesFor, ensureIdeLayoutPatch, ensureInsertRowDisabled, healSoulMdPatchRow, removeBundledRowDuplicates };

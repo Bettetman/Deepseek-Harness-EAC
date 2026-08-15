@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const { configLinesFor, healSoulMdPatchRow, removeBundledRowDuplicates } = require(join(root, 'patch-row-heal.js'));
+const { configLinesFor, ensureIdeLayoutPatch, ensureInsertRowDisabled, healSoulMdPatchRow, removeBundledRowDuplicates } = require(join(root, 'patch-row-heal.js'));
 
 // v2.0.0 实际写进用户 profile 的坏行：只有 id + name，没有 config。
 const BROKEN_PATCH = [
@@ -44,6 +44,79 @@ test('healSoulMdPatchRow 对无 soul-md 行 / 空内容安全', () => {
 
 test('configLinesFor 生成合法 patch YAML', () => {
   assert.equal(configLinesFor({ path: 'soul.md' }), '      config:\n        path: "soul.md"\n');
+});
+
+test('ensureIdeLayoutPatch 关闭官方布局并幂等挂载 IDE 布局', () => {
+  const once = ensureIdeLayoutPatch(BROKEN_PATCH);
+  assert.match(once, /- id: ui-layout\n  disabled: true/);
+  assert.match(once, /- id: ide-layout\n      name: '@anoslide\/dsh-client-vscode-layout'/);
+  assert.equal(ensureIdeLayoutPatch(once), once);
+  assert.equal(once.match(/id: ide-layout/g).length, 1);
+});
+
+test('ensureIdeLayoutPatch 清理旧式布局行，避免 duplicate ide-layout', () => {
+  const legacy = [
+    '- id: ui-layout',
+    '  disabled: true',
+    '- insert:',
+    '    - id: ide-layout',
+    "      name: '@anoslide/dsh-client-vscode-layout'",
+    '- insert:',
+    '    - id: terminal',
+    "      name: '@deepseek-ai/dsh-terminal'",
+    '',
+  ].join('\n');
+  const out = ensureIdeLayoutPatch(legacy);
+  assert.equal(out.match(/id: ui-layout/g).length, 1);
+  assert.equal(out.match(/id: ide-layout/g).length, 1);
+  assert.match(out, /- id: terminal/);
+  assert.equal(ensureIdeLayoutPatch(out), out);
+});
+
+test('ensureIdeLayoutPatch 清理共享 insert 中的旧布局时保留其他插件', () => {
+  const legacy = [
+    '- insert:',
+    '    - id: ide-layout',
+    "      name: '@anoslide/dsh-client-vscode-layout'",
+    '    - id: terminal',
+    "      name: '@deepseek-ai/dsh-terminal'",
+    '      config:',
+    '        shell: powershell',
+    '',
+  ].join('\n');
+  const out = ensureIdeLayoutPatch(legacy);
+  assert.equal(out.match(/id: ide-layout/g).length, 1);
+  assert.match(out, /- id: terminal[\s\S]*shell: powershell/, '同一 insert 下的 sibling 必须完整保留');
+  assert.equal(ensureIdeLayoutPatch(out), out);
+});
+
+test('ensureInsertRowDisabled 只停用目标行并保持配置幂等', () => {
+  const patch = [
+    '- insert:',
+    '    - id: tdai-memory',
+    "      name: 'dsh-tdai-memory'",
+    '      config:',
+    '        database: local',
+    '- insert:',
+    '    - id: terminal',
+    "      name: '@deepseek-ai/dsh-terminal'",
+    '',
+  ].join('\n');
+  const once = ensureInsertRowDisabled(patch, 'tdai-memory');
+  assert.equal(once.changed, true);
+  assert.match(once.patch, /- id: tdai-memory\n\s+disabled: true\n\s+name: 'dsh-tdai-memory'[\s\S]*database: local/);
+  assert.match(once.patch, /- id: terminal\n\s+name: '@deepseek-ai\/dsh-terminal'/);
+  const twice = ensureInsertRowDisabled(once.patch, 'tdai-memory');
+  assert.equal(twice.changed, false);
+  assert.equal(twice.patch, once.patch);
+});
+
+test('ensureInsertRowDisabled 把显式 false 修成 true', () => {
+  const patch = "- insert:\n    - id: tdai-memory\n      name: 'dsh-tdai-memory'\n      disabled: false\n";
+  const out = ensureInsertRowDisabled(patch, 'tdai-memory');
+  assert.equal(out.changed, true);
+  assert.match(out.patch, /disabled: true/);
+  assert.doesNotMatch(out.patch, /disabled: false/);
 });
 
 // 根因防回归：schema 的 path 必须有默认值（文件缺失 → fallback 空 → 不注册

@@ -14,11 +14,12 @@
 - ✅ **客户端自更新**：自动检查上游仓库（GitHub→Gitee 双源，Gitee 分片自动合并）发布的 DSH Desktop 新版本，经用户同意后下载、替换、重启；便携版/安装版各自适配
 - ✅ **快捷方式自动维护**：便携版首次运行自动创建开始菜单 + 桌面快捷方式；exe 移动后自动重建（修复"快捷方式指向的文件消失"）；从临时目录运行时给出提示
 - ✅ **DeepSeek 余额小部件**：对话底部统计栏内联显示「本轮 ¥X.XX · 余额 ¥Y.YY」（自动注入配套 dsh 客户端插件，点击跳转充值）
+- ✅ **VS Code 式 IDE 工作台**：左侧文件/会话，中间多标签查看与编辑，右侧对话/详情；支持搜索、Git 状态、新建、重命名、回收站删除、原子保存与外部修改冲突检查
 - ✅ **文件更改追踪 + 一键还原**：详情面板新增「文件」标签页，聚合本会话 agent 修改过的全部文件（新建/修改/删除、行级 diff、逐文件或全部还原）；数据只读复用会话日志已持久化的 `tool/result.meta.diffs`，还原由桌面壳做内容精确匹配后替换，失败安全提示
 - ✅ **会话完成系统通知**：agent 任务跑完时弹 Windows 系统通知，点击回到窗口
-- ✅ **界面皮肤**：设置页「皮肤」标签页内置 10 款 Web UI 皮肤（9 款 dsh-web-ui 皮肤 + 1 款深海女仆工坊），互斥切换、默认不启用、重启生效；随包标注出处与许可（详见「界面皮肤」章节）
+- ✅ **界面皮肤**：设置页「高级设置 → 皮肤」内置 10 款 Web UI 皮肤（9 款 dsh-web-ui 皮肤 + 1 款深海女仆工坊），互斥切换、默认不启用、重启生效
 - ✅ **内置社区插件套件**（v2.0 新增，详见「内置社区插件」章节）：插件市场 / 外置视觉模型 / 长期记忆 / soul.md 人设卡 / 移动端适配修复，全部随包分发、开箱即用
-- ✅ **一键迁移（一键夺舍）**：设置页选择任意已有 AI 工具目录（如 Codex / Claude 安装目录）→ 自动新建工作区与对话 → 发送迁移指令，AI 在对话中全程可视化提取 skills / MCP 配置 / 长期记忆
+- ✅ **一键迁移（一键夺舍）**：设置页「高级设置 → 一键迁移」选择任意已有 AI 工具目录（如 Codex / Claude 安装目录）→ 自动新建工作区与对话 → 发送迁移指令，AI 在对话中全程可视化提取 skills / MCP 配置 / 长期记忆
 
 ## 快速开始（成品用户）
 
@@ -63,6 +64,16 @@
 - **托盘**：点窗口关闭按钮默认隐藏到托盘并提示一次；托盘菜单可显示窗口 / 检查更新 / 开关会话通知 / 退出。chrome 菜单「关闭时最小化到托盘」可关闭该行为。
 - **快捷方式**：便携版首次运行自动创建桌面 + 开始菜单快捷方式（开始菜单快捷方式同时是 Windows Toast 通知的前置条件）；每次启动校验，exe 被移动后自动重建指向新位置；从系统临时目录运行时弹窗提醒移动到固定位置。
 
+## VS Code 式 IDE 工作台
+
+- `@anoslide/dsh-client-vscode-layout` 以 profile 层插件替换官方根布局：左侧「文件 / 会话」双 Tab、中间多文件标签、右侧「对话 / 详情」，拖拽调整宽度，窄屏自动收起，也可一键切回全屏对话。
+- 文件树支持懒加载、隐藏项折叠、递归搜索、Git `M/A/D/R/U` 角标、新建文件/文件夹、行内重命名和可恢复删除（Windows 回收站 / macOS 废纸篓 / Linux `gio trash`）；手动选择目录后会通过官方 `workspaces.create()` 登记为 DSH 工作区。
+- 查看器支持 Shiki 明暗主题高亮、行号、最多 20 个持久化标签、拖拽排序和右键菜单；文本文件可编辑，`Ctrl+S` 使用同目录临时文件原子替换，并在保存前校验版本，检测到外部修改时拒绝覆盖。
+- 宿主接口位于 `/vscode-files/*`，只允许访问 `workspaceRegistry` 已登记工作区；通过 `realpath` 围栏阻止符号链接/前缀目录越界，写请求要求同源 JSON，并设置文件大小、搜索深度与结果数上限。
+- 设置页「Skill 管理」只接受 `DSH_HOME/skills` 下的顶层条目 ID，支持启停及送入系统回收站删除，不接受浏览器传入任意绝对路径。
+- 设置页「MCP 管理」直接列出并修改 `profiles/web/cordis.patch.yml` 中的 `@deepseek-ai/dsh-mcp-client` 行，支持 stdio / streamable-http 添加、开关、删除与一键重启；环境变量和请求头不会在列表中回显，写入使用 writer lock + 原子替换。
+- 迁移自用户导入的 `dsh-vscode-layout-master`（anoslide，MIT）。EAC 未迁移其中重复的人设、桌面启动器、官方包覆盖补丁和图片桥接，继续使用项目已有实现。
+
 ## 文件更改追踪与回退
 
 - 详情面板新增「文件」标签页（与 对话/轨迹 并列）：聚合当前会话 agent 改过的所有文件，展示新建/修改/删除标记、行数变化与行级 diff。
@@ -71,7 +82,7 @@
 - **对话回退**：沿用 dsh 内置的会话分叉（消息尾部「从此处分叉」），可与文件还原组合使用。
 - 配套插件随桌面端分发（`assets/plugins/`），每次启动自动同步进 web profile 并幂等注册。
 
-## 项目文件树与 HTML/端口预览
+## 文件变更详情中的项目树与 HTML/端口预览
 
 - 「文件」标签页内新增「全部文件」子视图：VSCode 风格的层级文件树（懒加载、目录优先排序、文件大小/修改时间、本会话改过的文件带绿点标记），点击文件用系统默认程序打开；配套 host 插件注册 `GET /api/dsh-files/list`（仅回环）。
 - **站内侧边预览**（可拖宽，宽度持久化）：树中 HTML 文件的悬停「▶」按钮或「本会话修改」列表的「预览」按钮打开右侧预览面板；宿主插件以 `GET /dsh-files/static/<绝对路径>` 提供静态文件服务，HTML 的相对资源引用（`./css`、`../img`）随 URL 自然解析，与本地打开一致。
@@ -95,7 +106,7 @@
 
 ## 界面皮肤
 
-- 设置页新增「皮肤」标签页：内置 10 款 Web UI 皮肤，卡片式网格展示（名称/简介/主色/作者/出处与许可角标），当前皮肤高亮。
+- 设置页「高级设置 → 皮肤」内置 10 款 Web UI 皮肤，卡片式网格展示名称、简介与主色，当前皮肤高亮。
 - **默认皮肤即"不启用任何皮肤"**（原生外观）：10 款皮肤默认全部以 `disabled: true` 注册，无需改动即可保持默认外观；选中某款后其余自动禁用（互斥切换），「恢复默认皮肤」一键还原。
 - 切换在设置页即时生效于配置，**重启 Web 服务后生效**（服务重启由桌面端自动完成）。
 - 机制：皮肤是 browser-only 的 dsh client 插件（`window.__ModuleLoader__.load({id, factory})`），桌面端启动时把 `assets/skins/` 下皮肤包同步进 web profile 的 `node_modules`，并以 `ui-skin-*` 行注册到 `cordis.patch.yml`（幂等，已有行不重写，保留用户选择）；切换即重写这些行的 `disabled` 标记，配套插件 `@deepseek-ai/dsh-skin-switch`（host 半边 Typert Remote + 设置页 tab）负责列出/切换/恢复。
@@ -114,7 +125,7 @@
 | miku（初音未来） | 同上 | BSD-3-Clause |
 | maid-atelier（深海女仆工坊） | [dsh-deep-whale](https://github.com/Small-tailqwq/dsh-deep-whale) | **CC BY-NC-SA 4.0**（禁止商用） |
 
-- 皮肤来源与版权：dsh-web-ui 九款皮肤包随包分发 `LICENSE`（BSD-3-Clause，出处/作者字段见皮肤卡片与包内元数据）；maid-atelier 为衍生创作（角色原作：上善；DeepSeek 元素二次设计：ZipZipPipe；本皮肤：Small-tailqwq），完整署名链见包内 `NOTICE`，整体仅限非商业使用。各皮肤包的 `LICENSE`/`NOTICE`/`README` 随同步一并分发到 web profile 的 `node_modules` 中。
+- 第三方皮肤的 `LICENSE` / `NOTICE` / `README` 仍随皮肤包同步到 web profile 的 `node_modules` 中，不在设置界面展示来源与许可信息。
 
 ## 内置社区插件（v2.0）
 
@@ -122,12 +133,12 @@
 
 | 插件 | 功能 | 设置入口 |
 | --- | --- | --- |
-| `dsh-webui-market` | 社区插件市场：浏览 awesome-dsh-plugin.com 收录的全部插件，一键安装/卸载（含安装前试启动探测） | 设置 → 插件 → 插件市场 |
-| `dsh-tool-vision` | 外置视觉模型：`inspect_image` 把本地图片/URL 发给任意 OpenAI 兼容视觉端点（GLM-4V / qwen-vl / Ollama…），主模型保持不变 | 设置 → 视觉模型 |
+| `dsh-webui-market` | 社区插件市场：浏览 awesome-dsh-plugin.com 收录的全部插件，一键安装/卸载（含安装前试启动探测） | 设置 → 插件管理 → 插件市场 |
+| `dsh-tool-vision` | 外置视觉模型：同页提供服务商/模型快速预设与 API、图片桥接高级配置；`inspect_image` 把本地图片/URL 发给任意 OpenAI 兼容视觉端点，主模型保持不变 | 设置 → 视觉模型 |
 | `dsh-tdai-memory` | 长期记忆（腾讯云 Agent Memory 移植）：L0 对话 → L1 结构化事实 → L2 场景 → L3 画像，自动召回注入 + 记忆/对话搜索工具，数据存于 `~/.memory-tencentdb/memory-tdai` | 设置 → 长期记忆 |
-| `dsh-soul-md` | soul.md 人设卡：可视化编辑人设，热重载即时生效；未配置时注册空 section，**完全不影响官方系统提示词** | 设置 → 人设卡 |
+| `dsh-soul-md` | soul.md 人设卡：内容与参数集中管理，热重载即时生效；未配置时注册空 section，**完全不影响官方系统提示词** | 设置 → 人设管理 |
 | `dsh-web-mobile-fix` | Web UI 移动端适配修复 | 随包自动启用 |
-| `dsh-easy-setup` | 一键迁移（一键夺舍）：选择目录 → 新建工作区与对话 → AI 全程可视化迁移 skills / MCP / 记忆 | 设置 → 一键迁移 |
+| `dsh-easy-setup` | 一键迁移（一键夺舍）：选择目录 → 新建工作区与对话 → AI 全程可视化迁移 skills / MCP / 记忆 | 设置 → 高级设置 → 一键迁移 |
 
 > **Windows 文件锁排队**：运行中的 Web 服务加载着原生模块（sqlite-vec 等 DLL）时，插件安装/卸载会遇到 `EPERM` 文件锁 —— 任务会自动排队（`.dsh-market-pending.json`），下次服务重启前（无锁窗口）自动完成，市场界面提供「立即重启并完成」按钮。
 >
@@ -208,7 +219,7 @@ dsh-desktop/
 ├── session-watcher.js    # 会话完成监听（zstd 多帧解码 + turn/end 检测）
 ├── preload.js            # 沙箱预加载（自绘玻璃标题栏 + 窗口控制/菜单 IPC + 余额事件桥）
 ├── assets/               # 加载页、更新进度页、图标、托盘图标、配套 dsh 插件
-│   └── plugins/          # 桌面壳配套（dsh-balance、dsh-file-changes、dsh-terminal、
+│   └── plugins/          # 桌面壳配套（dsh-vscode-layout、dsh-balance、dsh-file-changes、dsh-terminal、
 │                         # dsh-easy-setup、dsh-skin-switch）+ 内置社区插件
 │                         # （dsh-webui-market、dsh-tool-vision、dsh-tdai-memory、
 │                         # dsh-soul-md、dsh-web-mobile-fix，含 vendor 与自包含依赖）

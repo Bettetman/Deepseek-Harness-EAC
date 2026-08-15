@@ -11,6 +11,8 @@
   },
   "license": "MIT",
   "peerDependencies": {
+    "@deepseek-ai/dsh-atomic-write": "^0.1.0-rc.6",
+    "shiki": "^4.4.0",
     "zod": "^3.0.0"
   }
 }

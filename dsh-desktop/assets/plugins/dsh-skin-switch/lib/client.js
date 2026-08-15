@@ -20,14 +20,14 @@ window.__ModuleLoader__.load({
 			section: "sks_section", header: "sks_header", reset: "sks_reset", grid: "sks_grid", card: "sks_card",
 			accent: "sks_accent", preview: "sks_preview", previewFallback: "sks_previewFallback", body: "sks_body", cardHead: "sks_cardHead", name: "sks_name", nameEn: "sks_nameEn",
 			active: "sks_active", tagline: "sks_tagline", tags: "sks_tags", tag: "sks_tag", desc: "sks_desc",
-			src: "sks_src", credit: "sks_credit", apply: "sks_apply", status: "sks_status", notice: "sks_notice",
-			failure: "sks_failure", restart: "sks_restart", credits: "sks_credits"
+			apply: "sks_apply", status: "sks_status", notice: "sks_notice",
+			failure: "sks_failure", restart: "sks_restart"
 		};
 		//#endregion
 		//#region locales
 		const zh = {
 			tab: "皮肤",
-			intro: "皮肤由社区作者制作，随 DSH Desktop 内置分发；切换后重启服务生效。每款皮肤的出处与许可标注在卡片与文末「来源与版权」。",
+			intro: "选择喜欢的界面皮肤；切换后重启服务生效。",
 			loading: "正在读取皮肤列表…",
 			loadFailed: "读取皮肤列表失败：",
 			retry: "重试",
@@ -43,25 +43,11 @@ window.__ModuleLoader__.load({
 			resetFailed: "恢复失败：",
 			restartHint: "新皮肤将在服务重启后生效。",
 			restartConfirm: "重启会中断当前正在运行的会话（历史记录保留）。确定现在重启服务吗？",
-			restartNow: "立即重启服务",
-			byAuthor: "作者",
-			openRepo: "查看仓库",
-			srcDshWebUi: "dsh-web-ui 系列皮肤",
-			licBsd: "许可：BSD-3-Clause",
-			srcMaid: "maid-atelier · 深海女仆工坊",
-			licMaid: "许可：CC BY-NC-SA 4.0（署名-非商业性使用-相同方式共享，禁止商业使用）",
-			creditMaid: "角色原作：上善（Pixiv 62155430 · B站「上善无形」）；DeepSeek 元素二次设计：ZipZipPipe（Pixiv 18604994 · B站「ZipZipPipe」）",
-			noticeMaid: "完整版权链见皮肤包 NOTICE（assets/skins/maid-atelier/）。",
-			srcUnknown: "出处见皮肤包内 LICENSE",
-			creditsTitle: "来源与版权",
-			creditsIntro: "以下皮肤均为第三方开源作品，版权归原作者所有，DSH Desktop 仅负责内置分发与切换管理：",
-			repoDshWebUi: "dsh-web-ui（zhu1090093659）· https://github.com/zhu1090093659/dsh-web-ui",
-			repoMaid: "dsh-deep-whale（Small-tailqwq）· https://github.com/Small-tailqwq/dsh-deep-whale",
-			creditsNote: "皮肤内容遵循各自许可；maid-atelier 禁止商业使用。"
+			restartNow: "立即重启服务"
 		};
 		const en = {
 			tab: "Skins",
-			intro: "Skins are made by community authors and shipped with DSH Desktop; changes take effect after the service restarts. Attribution and licenses are shown on each card and in “Sources & Credits” below.",
+			intro: "Choose a visual skin; changes take effect after the service restarts.",
 			loading: "Reading skins…",
 			loadFailed: "Failed to read skins: ",
 			retry: "Retry",
@@ -77,38 +63,9 @@ window.__ModuleLoader__.load({
 			resetFailed: "Failed to restore: ",
 			restartHint: "The new skin takes effect after the service restarts.",
 			restartConfirm: "Restarting interrupts the running session (history is kept). Restart the service now?",
-			restartNow: "Restart service now",
-			byAuthor: "Author",
-			openRepo: "Repository",
-			srcDshWebUi: "dsh-web-ui skin series",
-			licBsd: "License: BSD-3-Clause",
-			srcMaid: "maid-atelier · Abyssal Maid Atelier",
-			licMaid: "License: CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike, no commercial use)",
-			creditMaid: "Character original: 上善 (Pixiv 62155430 · Bilibili “上善无形”); DeepSeek-flavored redesign: ZipZipPipe (Pixiv 18604994 · Bilibili “ZipZipPipe”)",
-			noticeMaid: "Full credit chain is in the skin package NOTICE (assets/skins/maid-atelier/).",
-			srcUnknown: "See LICENSE inside the skin package",
-			creditsTitle: "Sources & Credits",
-			creditsIntro: "The skins below are third-party open-source works. All rights belong to their original authors; DSH Desktop only bundles and manages them:",
-			repoDshWebUi: "dsh-web-ui (zhu1090093659) · https://github.com/zhu1090093659/dsh-web-ui",
-			repoMaid: "dsh-deep-whale (Small-tailqwq) · https://github.com/Small-tailqwq/dsh-deep-whale",
-			creditsNote: "Each skin follows its own license; maid-atelier is non-commercial."
+			restartNow: "Restart service now"
 		};
 		const NS = "settings.dshSkinSwitch";
-		//#endregion
-		//#region attribution
-		// 皮肤出处：kind → 文案/许可；所有 dsh-web-ui 系列皮肤同源。
-		const SKIN_SOURCE_KIND = {
-			"ui-skin-xp": "dsh-web-ui",
-			"ui-skin-minecraft": "dsh-web-ui",
-			"ui-skin-blue-fantasy": "dsh-web-ui",
-			"ui-skin-whale-song": "dsh-web-ui",
-			"ui-skin-trading": "dsh-web-ui",
-			"ui-skin-qq98": "dsh-web-ui",
-			"ui-skin-ths": "dsh-web-ui",
-			"ui-skin-dragon-heir": "dsh-web-ui",
-			"ui-skin-miku": "dsh-web-ui",
-			"ui-skin-maid-atelier": "maid"
-		};
 		//#endregion
 		//#region remote face
 		const looseCodec = () => ({
@@ -169,11 +126,10 @@ window.__ModuleLoader__.load({
 				})
 			});
 		}
-		/** One skin card: accent bar, name, tagline, tags, attribution, apply. */
+		/** One skin card: accent bar, name, tagline, tags, and apply action. */
 		function SkinCard(props) {
 			const t = props.t;
 			const skin = props.skin;
-			const kind = SKIN_SOURCE_KIND[skin.id] ?? "unknown";
 			const isActive = props.activeId === skin.id;
 			const busy = props.busy;
 			return (0, react_jsx_runtime.jsx)("li", {
@@ -208,36 +164,6 @@ window.__ModuleLoader__.load({
 							children: skin.tags.map((tag) => (0, react_jsx_runtime.jsx)("span", { className: s.tag, children: tag }, tag))
 						}) : null,
 						skin.description ? (0, react_jsx_runtime.jsx)("p", { className: s.desc, children: skin.description }) : null,
-						(0, react_jsx_runtime.jsxs)("div", {
-							className: s.src,
-							children: [
-								kind === "maid" ? (0, react_jsx_runtime.jsxs)("span", {
-									children: [
-										t("srcMaid") + " · " + t("byAuthor") + " Small-tailqwq · ",
-										(0, react_jsx_runtime.jsx)("a", {
-											href: "https://github.com/Small-tailqwq/dsh-deep-whale",
-											target: "_blank",
-											rel: "noreferrer noopener",
-											children: t("openRepo")
-										}),
-										" · " + t("licMaid")
-									]
-								}) : kind === "dsh-web-ui" ? (0, react_jsx_runtime.jsxs)("span", {
-									children: [
-										t("srcDshWebUi") + " · " + t("byAuthor") + " zhu1090093659 · ",
-										(0, react_jsx_runtime.jsx)("a", {
-											href: "https://github.com/zhu1090093659/dsh-web-ui",
-											target: "_blank",
-											rel: "noreferrer noopener",
-											children: t("openRepo")
-										}),
-										" · " + t("licBsd")
-									]
-								}) : (0, react_jsx_runtime.jsx)("span", { children: t("srcUnknown") }),
-								kind === "maid" ? (0, react_jsx_runtime.jsx)("span", { className: s.credit, children: t("creditMaid") }) : null,
-								kind === "maid" ? (0, react_jsx_runtime.jsx)("small", { children: t("noticeMaid") }) : null
-							]
-						}),
 						(0, react_jsx_runtime.jsx)("button", {
 							type: "button",
 							className: s.apply,
@@ -252,7 +178,7 @@ window.__ModuleLoader__.load({
 				})
 			});
 		}
-		/** The 皮肤 tab: skin cards + attribution block + restart banner. */
+		/** The 皮肤 tab: skin cards and restart banner. */
 		function SkinTab(props) {
 			const t = props.t;
 			const [notice, setNotice] = react.useState(null);
@@ -337,35 +263,7 @@ window.__ModuleLoader__.load({
 							busy: busy.applying,
 							onApply: () => doApply(skin.id)
 						}, skin.id))
-					}) : null,
-					(0, react_jsx_runtime.jsxs)("div", {
-						className: s.credits,
-						children: [
-							(0, react_jsx_runtime.jsx)("h3", { children: t("creditsTitle") }),
-							(0, react_jsx_runtime.jsx)("p", { children: t("creditsIntro") }),
-							(0, react_jsx_runtime.jsx)("p", {
-								children: (0, react_jsx_runtime.jsx)("a", {
-									href: "https://github.com/zhu1090093659/dsh-web-ui",
-									target: "_blank",
-									rel: "noreferrer noopener",
-									children: t("repoDshWebUi")
-								})
-							}),
-							(0, react_jsx_runtime.jsx)("p", { children: t("licBsd") }),
-							(0, react_jsx_runtime.jsx)("p", {
-								children: (0, react_jsx_runtime.jsx)("a", {
-									href: "https://github.com/Small-tailqwq/dsh-deep-whale",
-									target: "_blank",
-									rel: "noreferrer noopener",
-									children: t("repoMaid")
-								})
-							}),
-							(0, react_jsx_runtime.jsx)("p", { children: t("licMaid") }),
-							(0, react_jsx_runtime.jsx)("p", { className: s.credit, children: t("creditMaid") }),
-							(0, react_jsx_runtime.jsx)("small", { children: t("noticeMaid") }),
-							(0, react_jsx_runtime.jsx)("small", { children: t("creditsNote") })
-						]
-					})
+					}) : null
 				]
 			});
 		}
@@ -374,7 +272,7 @@ window.__ModuleLoader__.load({
 		/** Required browser services. */
 		const inject = ["slots", "locale", "remote"];
 		/**
-		 * Mount the 皮肤 tab into Settings → Plugins. The tab itself is
+		 * Mount the 皮肤 tab into Settings → Advanced Settings. The tab itself is
 		 * registered unconditionally; the dynamic Remote face is mounted in the
 		 * background and every call resolves it lazily, so a mount problem shows
 		 * up as an error banner inside the tab instead of the tab silently
@@ -417,10 +315,10 @@ window.__ModuleLoader__.load({
 					return Promise.resolve({ available: false });
 				}
 			});
-			ctx.slots.inject("settings.plugins.tab", () => ctx.slots.register({
-				name: "settings.plugins.tab",
+			ctx.slots.inject("settings.advanced.panel", () => ctx.slots.register({
+				name: "settings.advanced.panel",
 				id: "skin",
-				order: 15,
+				order: 0,
 				label: () => t("tab"),
 				locale: NS,
 				inject: injected

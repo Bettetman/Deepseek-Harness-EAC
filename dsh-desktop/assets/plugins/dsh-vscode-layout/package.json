@@ -1,0 +1,27 @@
+{
+  "name": "@anoslide/dsh-client-vscode-layout",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-theme"
+      ],
+      "platform": "web"
+    }
+  },
+  "description": "EAC IDE 布局：左文件/会话双 Tab、中间多标签查看与安全编辑、右侧对话/详情",
+  "license": "MIT"
+}

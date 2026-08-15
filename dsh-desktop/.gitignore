@@ -16,3 +16,7 @@ build/*
 !assets/plugins/*/data/
 !assets/plugins/dsh-tdai-memory/node_modules/
 !assets/plugins/dsh-tdai-memory/node_modules/**/data/
+!assets/plugins/dsh-tdai-memory/node_modules/@tencentdb-agent-memory/
+!assets/plugins/dsh-tdai-memory/node_modules/@tencentdb-agent-memory/tcvdb-text/
+!assets/plugins/dsh-tdai-memory/node_modules/@tencentdb-agent-memory/tcvdb-text/dist/
+!assets/plugins/dsh-tdai-memory/node_modules/@tencentdb-agent-memory/tcvdb-text/dist/**

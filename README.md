@@ -28,12 +28,13 @@
 | --- | --- | --- |
 | 运行方式 | 需先安装 Node.js，`npx @deepseek-ai/dsh web` + 浏览器访问 | **免装 Node**：内置独立 Node 运行时与 npm CLI，双击即用 |
 | 界面皮肤 | 仅官方默认外观 | **内置 10 款 Web UI 皮肤**（XP / QQ98 / 初音未来 / 我的世界 / 同花顺 / 鲸歌…），设置页一键互斥切换，默认不启用保持原生 |
+| 开发工作台 | 对话为主的单页布局 | **VS Code 式三栏工作台**：左文件/会话、中间多文件标签、右侧对话/详情，可拖宽并一键切全屏对话 |
 | 窗口体验 | 浏览器标签页 | **原生无边框窗口**（自绘玻璃栏）+ **系统托盘常驻**，关闭不打断任务 |
 | 便携性 | 无 | **便携版**数据跟随 exe，拷到 U 盘即用 |
 | 余额查看 | 手动上官网查 | 对话底部内联「**本轮 ¥X · 余额 ¥Y**」实时小部件，点击跳转充值 |
-| 文件管理 | 手动翻目录 | **会话文件更改追踪**（行级 diff）+ **一键还原**，全部/逐文件 |
+| 文件管理 | 手动翻目录 | 文件树、搜索、Git 状态、多标签查看/编辑、新建/重命名/回收站删除；另有**会话文件更改追踪 + 一键还原** |
 | 会话内终端 | 无 | **终端标签页**：会话项目目录内持久 PowerShell，SSE 流式，断线重连 |
-| 配置上手 | 手编 YAML | **设置页可视化**：视觉模型一键选择、`soul.md` 人设可视化编辑、**从 Codex / Claude Code 一键迁移 skills + MCP + 记忆** |
+| 配置上手 | 手编 YAML | **设置页可视化**：模型/插件管理、视觉模型一键选择、`soul.md` 人设管理；皮肤与 Codex / Claude Code 一键迁移集中在「高级设置」 |
 | 插件安装 | 手动 npm | 设置页内置**插件市场**，搜索/一键安装/卸载 dsh 插件 |
 | 更新 | 手动 `npm update` | **双重自动更新**：官方 agent 更新（npm overlay，失败可回退）+ 客户端本体自更新，均经用户同意 |
 | 任务通知 | 无 | agent 任务完成弹 **Windows 系统通知**，点击回到窗口 |
@@ -63,7 +64,7 @@
 
 1. 双击运行，显示启动动画，随后自动加载 DeepSeek Harness Web UI（原生窗口，仅本机回环访问）。
 2. 如尚未配置 API Key，在界面「设置」内完成配置即可开始使用（与命令行 dsh 完全一致）。
-3. 常用入口：设置 → 皮肤（10 款内置皮肤切换）/ 插件市场 / 模型一键选择；对话区 → 终端 / 文件标签页。
+3. 常用入口：左侧「文件 / 会话」切换项目与会话，中间查看或编辑多个文件，右侧继续对话；设置 → 模型管理 / 插件管理 / 人设管理 / 高级设置。
 
 > 便携版数据目录在 exe 旁的 `data\`；安装版在 `%APPDATA%\Deepseek Harness EAC v2.0\`。
 > 想强制指定 DSH 配置目录？启动前设置环境变量 `DSH_HOME` 即可（与 dsh CLI 行为一致）。
@@ -78,12 +79,21 @@
 
 ## 功能一览
 
+### VS Code 式 IDE 工作台
+
+- 三栏布局：左侧「文件 / 会话」双 Tab，中间多标签文件区，右侧「对话 / 详情」；分栏可拖宽，窄屏自动收起侧栏，并可一键切换全屏对话。
+- 文件区支持懒加载树、隐藏项折叠、文件名递归搜索、Git `M/A/D/R/U` 状态、Shiki 明暗主题高亮、行号、标签拖拽排序与状态持久化。
+- 文本文件可进入编辑模式并用 `Ctrl+S` 原子保存；保存前检查磁盘版本，避免静默覆盖外部修改。支持新建文件/目录、行内重命名和可恢复删除（Windows 回收站 / macOS 废纸篓 / Linux `gio trash`）。
+- 手动选择的目录会先登记为正式 DSH 工作区；文件接口只接受已登记工作区内的真实路径，并限制文件大小、搜索深度与结果数量。
+- 设置页新增 Skill / MCP 管理：Skill 仅管理 `DSH_HOME/skills` 顶层条目；MCP 直接管理当前 web profile 的 `cordis.patch.yml`，支持添加、开关、删除并一键重启服务生效。
+- 该能力以 profile 插件替换根布局，不覆盖官方安装目录；官方升级后仍可回退。实现基于导入的 `dsh-vscode-layout-master`（anoslide，MIT），仅迁移与 EAC 互补的布局和文件能力。
+
 ### 界面皮肤自定义（EAC 特色）
 
-- 设置页「皮肤」标签页内置 **10 款 Web UI 皮肤**，卡片式网格展示（名称/简介/主色/作者/出处与许可角标）。
+- 设置页「高级设置 → 皮肤」内置 **10 款 Web UI 皮肤**，卡片式网格展示名称、简介与主色。
 - 9 款来自社区 [dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui)（BSD-3-Clause）+ 1 款 [dsh-deep-whale 深海女仆工坊](https://github.com/Small-tailqwq/dsh-deep-whale)（CC BY-NC-SA 4.0，禁止商用）。
 - **默认不启用任何皮肤**（原生外观）；选中某款后其余自动禁用（互斥切换），「恢复默认皮肤」一键还原；切换后自动重启 Web 服务生效。
-- 皮肤是 browser-only 的 dsh client 插件，由桌面端同步进 web profile 并幂等注册到 `cordis.patch.yml`，完整版权署名随包分发。
+- 皮肤是 browser-only 的 dsh client 插件，由桌面端同步进 web profile 并幂等注册到 `cordis.patch.yml`；第三方许可证文件仍随皮肤包分发，不在设置界面展示。
 
 | 皮肤 | 出处 | 许可 |
 | --- | --- | --- |
@@ -116,15 +126,16 @@
 ### 效率工具（配套插件体系）
 
 - **DeepSeek 余额小部件**：对话底部统计栏显示「本轮 ¥X · 余额 ¥Y」，点击跳转充值，15 分钟自动刷新
+- **IDE 文件工作台**：左侧文件树与搜索，中间多标签查看/编辑，Git 状态、新建/重命名/回收站删除、冲突安全保存
 - **文件更改追踪 + 一键还原**：「文件」标签页查看本会话全部文件改动（新建/修改/删除 + 行级 diff）并逐文件/全部还原；数据只读复用会话日志，稳定不受升级影响
 - **会话内终端**：「终端」标签页在当前会话项目目录启动持久 PowerShell（SSE 流式、命令历史、断线重连），中文编码干净
 - **项目文件树 + HTML/端口预览**：VSCode 风格文件树，站内预览 HTML/本地端口服务（仅回环）
-- **社区插件市场（v2 新增，dsh-webui-market）**：设置 → 插件 → 市场，浏览 awesome-dsh-plugin.com 收录的 dsh 插件并一键安装/卸载到 profile；安装/卸载任务在服务重启窗口期排队执行，不打断当前会话
-- **外置视觉模型（v2 新增，dsh-tool-vision）**：`inspect_image` 工具把本地图片或图片 URL 发给任意 OpenAI 兼容视觉端点（qwen-vl / GLM-4V / Ollama 等），看图回答直接带回对话
+- **社区插件市场（v2 新增，dsh-webui-market）**：设置 → 插件管理 → 市场，浏览 awesome-dsh-plugin.com 收录的 dsh 插件并一键安装/卸载到 profile；安装/卸载任务在服务重启窗口期排队执行，不打断当前会话
+- **外置视觉模型（v2 新增，dsh-tool-vision）**：统一的「视觉模型」设置页同时提供服务商/模型快速预设和完整高级配置；`inspect_image` 工具把本地图片或图片 URL 发给任意 OpenAI 兼容视觉端点（qwen-vl / GLM-4V / Ollama 等），看图回答直接带回对话
 - **长期记忆（v2 新增，dsh-tdai-memory）**：腾讯云 Agent Memory 移植 —— L0 对话捕获 → L1 结构化记忆 → L2 场景 / L3 画像，自动召回注入 + 记忆/对话搜索工具，复用现有 `~/.memory-tencentdb/memory-tdai` 数据
 - **soul.md 人设热重载（v2 新增，dsh-soul-md）**：markdown 人设文件注入系统提示词（`soul:persona`），文件变更即时热重载，Agent 边干活边角色扮演
 - **移动端布局修复（v2 新增，dsh-web-mobile-fix）**：窄屏（≤400px）下设置面板、弹窗、侧栏、会话头布局修复，纯前端 CSS，不影响桌面布局
-- **快速配置（dsh-easy-setup）**：视觉模型提供商/模型一键选择、`soul.md` 人设可视化编辑、从 Codex / Claude Code 目录一键迁移 skills + MCP + 记忆
+- **快速配置（dsh-easy-setup）**：`soul.md` 内容编辑与参数合并为「人设管理」；皮肤和从 Codex / Claude Code 目录一键迁移 skills + MCP + 记忆集中在「高级设置」
 - **双重自动更新**：官方 dsh agent 更新（npm overlay）+ 客户端封装自更新，均经用户同意，失败自动回退
 - **稳定性自愈**：`profile-module-heal` 自动修复 profile 模块遮蔽问题（如 `prompt section already registered`、模型列表/模式切换失效）；重启服务时等待旧进程完全退出（释放文件锁）再启动新服务，插件包（含自带 vendor 依赖）随安装包原样分发
 
@@ -186,7 +197,7 @@ dsh-desktop/                  # Electron 桌面端
 ├── preload.js                # 沙箱预加载
 ├── assets/                   # 加载页、更新进度页、图标、皮肤、配套插件
 │   ├── skins/                # 10 款内置 Web UI 皮肤
-│   └── plugins/              # 桌面壳配套：dsh-balance / dsh-file-changes / dsh-terminal
+│   └── plugins/              # 桌面壳配套：dsh-vscode-layout / dsh-balance / dsh-file-changes / dsh-terminal
 │                             # / dsh-easy-setup / dsh-skin-switch
 │                             # 内置社区插件：dsh-webui-market / dsh-tool-vision
 │                             # / dsh-tdai-memory / dsh-soul-md / dsh-web-mobile-fix

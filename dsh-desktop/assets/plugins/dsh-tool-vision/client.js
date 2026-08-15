@@ -19,6 +19,8 @@ window.__ModuleLoader__.load({
 
     // ── CSS (theme tokens) ────────────────────────────────────────────────
     var CSS = ".__tv_root{max-width:640px;display:flex;flex-direction:column;gap:10px}" +
+      ".__tv_quick{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-2)}" +
+      ".__tv_quickTitle{grid-column:1/-1;font-size:12px;font-weight:600;color:var(--dsw-alias-label-primary)}" +
       ".__tv_field{display:flex;flex-direction:column;gap:4px}" +
       ".__tv_label{font-size:12px;font-weight:600;color:var(--dsw-alias-label-primary);display:flex;align-items:center;gap:6px}" +
       ".__tv_override{font-size:10px;color:var(--dsw-alias-state-business-primary);border:1px solid var(--dsw-alias-border-l2);border-radius:4px;padding:0 4px}" +
@@ -33,7 +35,8 @@ window.__ModuleLoader__.load({
       ".__tv_btnPrimary{border-color:var(--dsw-alias-state-business-primary);background:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-on-accent)}" +
       ".__tv_status{font-size:12px;color:var(--dsw-alias-label-tertiary)}" +
       ".__tv_error{font-size:12px;color:var(--dsw-alias-state-error-primary)}" +
-      ".__tv_unavailable{font-size:13px;color:var(--dsw-alias-label-tertiary)}";
+      ".__tv_unavailable{font-size:13px;color:var(--dsw-alias-label-tertiary)}" +
+      "@media(max-width:560px){.__tv_quick{grid-template-columns:minmax(0,1fr)}}";
     var tagId = "dsh-tool-vision/main.css";
     if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
       var tag = document.createElement("style");
@@ -49,6 +52,10 @@ window.__ModuleLoader__.load({
     var zh = {
       nav: "视觉模型",
       intro: "外置视觉模型配置：Agent 通过 inspect_image 工具把图片发给该端点分析。修改后即时生效（settings.yaml 热重载）。",
+      quickTitle: "快速配置（也可在下方手动修改）",
+      provider: "视觉服务商",
+      presetModel: "预设模型",
+      customModel: "自定义（在下方填写）",
       apiKeyHint: "留空保持当前密钥。密钥只写不读，不会回显。",
       maxTokens: "最大输出 Tokens",
       timeoutMs: "请求超时（毫秒）",
@@ -68,6 +75,10 @@ window.__ModuleLoader__.load({
     var en = {
       nav: "Vision Model",
       intro: "External vision model config: the agent sends images to this endpoint via the inspect_image tool. Changes apply immediately (settings.yaml hot-reload).",
+      quickTitle: "Quick setup (or edit the fields below)",
+      provider: "Vision provider",
+      presetModel: "Preset model",
+      customModel: "Custom (enter below)",
       apiKeyHint: "Leave blank to keep the current key. The key is write-only and never echoed.",
       maxTokens: "Max output tokens",
       timeoutMs: "Request timeout (ms)",
@@ -107,6 +118,14 @@ window.__ModuleLoader__.load({
       bridgeExportDir: "bridgeExportDir",
       multimodalModels: "multimodalModels"
     };
+    var PROVIDERS = [
+      { id: "zhipu", label: "智谱 AI（GLM）", baseURL: "https://open.bigmodel.cn/api/paas/v4", keyEnv: "GLM_API_KEY", models: ["glm-4v-flash", "glm-4v-plus", "glm-4v"] },
+      { id: "dashscope", label: "阿里云百炼（通义千问 VL）", baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", keyEnv: "DASHSCOPE_API_KEY", models: ["qwen-vl-plus", "qwen-vl-max", "qwen2.5-vl-72b-instruct"] },
+      { id: "openai", label: "OpenAI", baseURL: "https://api.openai.com/v1", keyEnv: "OPENAI_API_KEY", models: ["gpt-4o-mini", "gpt-4o"] },
+      { id: "siliconflow", label: "硅基流动 SiliconFlow", baseURL: "https://api.siliconflow.cn/v1", keyEnv: "SILICONFLOW_API_KEY", models: ["Qwen/Qwen2.5-VL-32B-Instruct", "Pro/Qwen/Qwen2.5-VL-7B-Instruct"] },
+      { id: "moonshot", label: "月之暗面 Kimi", baseURL: "https://api.moonshot.cn/v1", keyEnv: "MOONSHOT_API_KEY", models: ["moonshot-v1-8k-vision-preview"] },
+      { id: "custom", label: "自定义（手动填写）", baseURL: "", keyEnv: "VISION_API_KEY", models: [] }
+    ];
 
     function labelOf(f) {
       return f.label;
@@ -161,6 +180,16 @@ window.__ModuleLoader__.load({
         setNotice(null);
         setError(null);
       }
+
+      function setFields(fields) {
+        setDraft(function (prev) { return Object.assign({}, prev, fields); });
+        setNotice(null);
+        setError(null);
+      }
+
+      var baseURLDraft = fieldDraft(FIELDS[0]);
+      var modelDraft = fieldDraft(FIELDS[3]);
+      var selectedProvider = PROVIDERS.find(function (p) { return p.baseURL && p.baseURL === baseURLDraft; }) || PROVIDERS[PROVIDERS.length - 1];
 
       function onSave() {
         setBusy(true); setNotice(null); setError(null);
@@ -222,6 +251,43 @@ window.__ModuleLoader__.load({
 
       return h("div", { className: "__tv_root" },
         h("p", { className: "__tv_hint", style: { margin: "0 0 4px" } }, t("intro")),
+        h("div", { className: "__tv_quick" },
+          h("div", { className: "__tv_quickTitle" }, t("quickTitle")),
+          h("label", { className: "__tv_field" },
+            h("span", { className: "__tv_label" }, t("provider")),
+            h("select", {
+              className: "__tv_input",
+              value: selectedProvider.id,
+              onChange: function (e) {
+                var provider = PROVIDERS.find(function (p) { return p.id === e.target.value; });
+                if (!provider) return;
+                if (provider.id === "custom") {
+                  setFields({ baseURL: "", apiKeyEnv: provider.keyEnv, model: "" });
+                  return;
+                }
+                setFields({ baseURL: provider.baseURL, apiKeyEnv: provider.keyEnv, model: provider.models[0] || "" });
+              }
+            }, PROVIDERS.map(function (p) {
+              return h("option", { key: p.id, value: p.id }, p.label);
+            }))
+          ),
+          selectedProvider.models.length ? h("label", { className: "__tv_field" },
+            h("span", { className: "__tv_label" }, t("presetModel")),
+            h("select", {
+              className: "__tv_input",
+              value: selectedProvider.models.indexOf(modelDraft) >= 0 ? modelDraft : "__custom",
+              onChange: function (e) {
+                if (e.target.value !== "__custom") setFields({ model: e.target.value });
+              }
+            },
+              selectedProvider.models.map(function (m) { return h("option", { key: m, value: m }, m); }),
+              h("option", { value: "__custom" }, t("customModel"))
+            )
+          ) : h("div", { className: "__tv_field" },
+            h("span", { className: "__tv_label" }, t("presetModel")),
+            h("span", { className: "__tv_hint" }, t("customModel"))
+          )
+        ),
         FIELDS.map(function (f) {
           var overridden = f.key in user;
           if (f.type === "checkbox") {
@@ -280,7 +346,7 @@ window.__ModuleLoader__.load({
         return ctx.slots.register({
           name: "settings.section",
           id: "tool-vision",
-          order: 25,
+          order: 20,
           label: function () { return t("nav"); },
           locale: NS
         }, function (props) {

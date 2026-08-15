@@ -25,7 +25,7 @@ const updater = require('./updater');
 const clientUpdater = require('./client-updater');
 const balance = require('./balance');
 const { healProfileModuleShadowing } = require('./profile-module-heal');
-const { configLinesFor, healSoulMdPatchRow, removeBundledRowDuplicates } = require('./patch-row-heal');
+const { configLinesFor, ensureIdeLayoutPatch, ensureInsertRowDisabled, healSoulMdPatchRow, removeBundledRowDuplicates } = require('./patch-row-heal');
 const { syncBundledPresets, ensureDefaultAgentPreset } = require('./preset-sync');
 const { SessionWatcher, scanZstdFrames } = require('./session-watcher');
 const zlib = require('node:zlib');
@@ -932,6 +932,9 @@ const COMPANION_PLUGINS = [
   { id: 'balance', name: '@deepseek-ai/dsh-balance' },
   { id: 'file-changes', name: '@deepseek-ai/dsh-file-changes' },
   { id: 'client-file-changes', name: '@deepseek-ai/dsh-client-file-changes' },
+  // 完整 IDE 根布局由 ensureIdeLayoutPatch 负责替换官方 ui-layout；这里
+  // 只负责把包同步到 profile，避免再写一条重复 insert。
+  { id: 'ide-layout', name: '@anoslide/dsh-client-vscode-layout', dir: 'dsh-vscode-layout', profileRow: false },
   { id: 'terminal', name: '@deepseek-ai/dsh-terminal' },
   // 社区插件市场（awesome-dsh-plugin.com 目录）：内置分发，替换早期 npm 检索版市场。
   { id: 'dsh-market-plugin', name: '@sanqi-normal/dsh-webui-market-plugin', dir: 'dsh-webui-market' },
@@ -947,7 +950,10 @@ const COMPANION_PLUGINS = [
   // 退出码 1，应用持续闪退“启动失败”）。schema 现已带默认值，这里显式
   // 写 config 是双保险，healSoulMdPatchRow 另负责修复存量坏行。
   { id: 'soul-md', name: 'dsh-soul-md', dir: 'dsh-soul-md', config: { path: 'soul.md' } },
-  { id: 'tdai-memory', name: 'dsh-tdai-memory', dir: 'dsh-tdai-memory' },
+  // The bundled native jieba/sqlite-vec payloads target Windows. Full plugin
+  // sync is opt-in on macOS/Linux for layout development, where this row must
+  // stay disabled or it aborts the whole profile during native module load.
+  { id: 'tdai-memory', name: 'dsh-tdai-memory', dir: 'dsh-tdai-memory', disabled: !IS_WIN },
   { id: 'mobile-fix', name: 'dsh-web-mobile-fix', dir: 'dsh-web-mobile-fix' },
 ];
 
@@ -1153,7 +1159,11 @@ function processPendingMarketOps() {
 }
 
 function syncCompanionPlugins() {
-  if (!IS_WIN) return;
+  // Production is Windows-only. Maintainers can opt into the same complete
+  // profile sync on macOS/Linux to exercise every bundled settings page and
+  // client plugin during development without changing the normal platform
+  // contract.
+  if (!IS_WIN && process.env.DSH_DESKTOP_SYNC_PLUGINS !== '1') return;
   try {
     const home = dshHome || path.join(os.homedir(), '.dsh');
     const profileDirP = path.join(home, 'profiles', 'web');
@@ -1179,7 +1189,7 @@ function syncCompanionPlugins() {
       const src = path.join(__dirname, 'assets', 'plugins', p.dir || p.name.slice('@deepseek-ai/'.length));
       if (!fs.existsSync(path.join(src, 'package.json'))) continue;
       copyPluginPackage(profileDirP, src, p.name);
-      pending.push({ id: p.id, name: p.name, disabled: false, config: p.config });
+      if (p.profileRow !== false) pending.push({ id: p.id, name: p.name, disabled: p.disabled === true, config: p.config });
     }
     // 内置皮肤：行 id 取皮肤包 skin.json 的 wiring.id（ui-skin-*）。
     for (const entry of fs.readdirSync(SKINS_DIR, { withFileTypes: true })) {
@@ -1219,6 +1229,19 @@ function syncCompanionPlugins() {
       patch = deduped.patch;
       changed = true;
       log('boot', '已移除与 bundle 登记重复的 patch 行: ' + deduped.removed.join(', '));
+    }
+    const withIdeLayout = ensureIdeLayoutPatch(patch);
+    if (withIdeLayout !== patch) {
+      patch = withIdeLayout;
+      changed = true;
+    }
+    if (!IS_WIN) {
+      const safeMemory = ensureInsertRowDisabled(patch, 'tdai-memory');
+      if (safeMemory.changed) {
+        patch = safeMemory.patch;
+        changed = true;
+        log('boot', 'macOS/Linux 开发 profile 已停用仅含 Windows 原生组件的 tdai-memory');
+      }
     }
     for (const p of pending) {
       if (new RegExp('id:\\s*' + p.id + '\\b').test(patch)) continue;

@@ -6,6 +6,36 @@ DeepSeek Harness（dsh）的 Windows 桌面客户端：内置独立 Node 运行�
 1.0.0（品牌升级 EAC + 界面皮肤 + 快速配置 + 插件市场 + 稳定性自愈）→
 2.0.0（本版：社区插件市场 + 视觉/记忆/人设插件全家桶 + 重启窗口期排队任务 + 插件原样分发）。
 
+## [未发布]
+
+### 新增
+- **VS Code 式 IDE 工作台**：迁移 `dsh-vscode-layout-master` 中与 EAC 互补的三栏布局、
+  文件/会话双 Tab、多文件标签、Shiki 高亮、编辑保存、文件搜索和 Git 状态；支持
+  新建文件/目录、行内重命名与跨平台可恢复删除（Windows 回收站 / macOS 废纸篓 /
+  Linux `gio trash`）。
+- **安全文件接口**：`dsh-file-changes` 新增 `/vscode-files/*` 路由，只允许访问
+  `workspaceRegistry` 已登记工作区；加入真实路径围栏、同源 JSON 写入、原子保存、
+  版本冲突检测，以及文件大小、搜索深度和结果数量限制。
+- **Skill / MCP 管理**：设置页支持启停、删除 `DSH_HOME/skills` 顶层 Skill，并直接
+  管理当前 `cordis.patch.yml` 的官方 MCP 客户端行；MCP 支持 stdio / HTTP 添加、
+  开关、删除和一键重启，密钥不回显，配置使用 writer lock + 原子保存。
+
+### 改进
+- 设置页合并重复的「视觉模型（快速配置）」入口：供应商/模型预设迁入完整「视觉模型」页，
+  同页保留 API 与图片桥接高级配置；「模型 / 插件」改名为「模型管理 / 插件管理」，
+  「人设卡 / 人设编辑」合并为「人设管理」，皮肤与一键迁移收纳进「高级设置」；
+  皮肤页移除卡片来源/许可文案和页尾「来源与版权」展示。
+- IDE 布局通过 web profile 的受管 patch 替换官方 `ui-layout`，不修改全局官方包；
+  启动时幂等同步，可随官方升级回退。
+- 保留并验证与官方会话/侧栏，以及 EAC 文件变更视图、终端、皮肤和移动端修复插件
+  的槽位兼容性；未重复迁移人设、启动器、官方包覆盖补丁和图片桥接。
+- `dsh-balance` 改为等待官方 composer dock 声明后注册，消除客户端插件加载顺序导致的
+  `slot "conversation.composer.dock" is not declared` 错误。
+- 补齐 `tcvdb-text/dist` 运行文件；macOS/Linux 开发 profile 自动停用仅含 Windows
+  原生依赖的 `tdai-memory`，正式 Windows 构建保持启用。
+- 新增路径/同源策略、布局 patch、Skill/MCP 管理、插件插槽与跨平台启动回归测试，
+  修复 `npm test` 通配符入口；自动化检查全部通过，并保留上游 anoslide MIT 许可文件。
+
 ## [2.0.0] — 2026-08-15
 
 ### 新增
