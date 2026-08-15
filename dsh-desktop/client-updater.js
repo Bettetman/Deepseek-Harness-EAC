@@ -191,7 +191,7 @@ async function checkLatest(ctx, currentVersion) {
 // --- 资产选择 / 下载 -------------------------------------------------------
 
 function selectAsset(release) {
-  // 资产命名：Deepseek-Harness-EAC-<version>-Setup-x64.exe / …-Portable-x64.exe。
+  // 资产命名：DeepSeek-Harness-Desktop-v<version>-Setup-x64.exe / …-Portable-x64.exe。
   // 旧正则 /-setup-.*-x64\.exe$/ 要求 -setup- 之后还有第二个 "-x64"，
   // 对 "…-v2.0.1-Setup-x64.exe"（-Setup- 直接连 x64.exe）永远匹配失败，
   // 更新流程卡死在"未找到匹配的安装包资产"。锚定 \.exe$ 保证 .blockmap
@@ -201,19 +201,22 @@ function selectAsset(release) {
   if (direct) return { parts: [direct], name: direct.name, totalSize: direct.size };
 
   // Gitee 单文件 100MB 限制：安装包拆分为 <file>.part1 / <file>.part2 …
-  const base = isPortable()
-    ? `Deepseek-Harness-EAC-${release.version}-Portable-x64.exe`
-    : `Deepseek-Harness-EAC-${release.version}-Setup-x64.exe`;
-  const parts = release.assets
-    .filter((a) => a.name.startsWith(base + '.part'))
-    .sort((a, b) => {
-      const n = (s) => parseInt(s.split('part').pop(), 10) || 0;
-      return n(a.name) - n(b.name);
-    });
-  if (!parts.length) {
-    throw new Error('未找到匹配的安装包资产（' + release.assets.map((a) => a.name).join(', ') + '）');
+  const kind = isPortable() ? 'Portable' : 'Setup';
+  const bases = [
+    `DeepSeek-Harness-Desktop-v${release.version}-${kind}-x64.exe`,
+    `Deepseek-Harness-EAC-v${release.version}-${kind}-x64.exe`,
+    `Deepseek-Harness-EAC-${release.version}-${kind}-x64.exe`,
+  ];
+  for (const base of bases) {
+    const parts = release.assets
+      .filter((a) => a.name.startsWith(base + '.part'))
+      .sort((a, b) => {
+        const n = (s) => parseInt(s.split('part').pop(), 10) || 0;
+        return n(a.name) - n(b.name);
+      });
+    if (parts.length) return { parts, name: base, totalSize: parts.reduce((s, p) => s + p.size, 0) };
   }
-  return { parts, name: base, totalSize: parts.reduce((s, p) => s + p.size, 0) };
+  throw new Error('未找到匹配的安装包资产（' + release.assets.map((a) => a.name).join(', ') + '）');
 }
 
 function downloadFile(url, dest, { onProgress } = {}) {

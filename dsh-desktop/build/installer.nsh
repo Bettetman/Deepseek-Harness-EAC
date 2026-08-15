@@ -3,6 +3,8 @@
 ; (current and legacy exe names) first: Windows file locks otherwise make the
 ; old-version uninstall fail with "Failed to uninstall old application files".
 !macro customInit
+  nsExec::Exec 'taskkill /F /T /IM "DeepSeek Harness Desktop.exe"'
+  nsExec::Exec 'taskkill /F /T /IM "Deepseek Harness EAC v2.0.exe"'
   nsExec::Exec 'taskkill /F /T /IM "Deepseek Harness EAC v1.0.exe"'
   nsExec::Exec 'taskkill /F /T /IM "DSH Desktop.exe"'
   Sleep 1200

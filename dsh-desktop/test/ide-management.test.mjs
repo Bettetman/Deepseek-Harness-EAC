@@ -39,6 +39,7 @@ test('MCP manager lists current cordis.patch rows without returning secret value
     url: '',
     enabled: true,
     hasEnv: true,
+    marketPackage: '',
   }]);
   assert.doesNotMatch(JSON.stringify(entries), /secret/);
 });
@@ -74,6 +75,21 @@ test('settings client registers Skill/MCP sections and sends opaque Skill ids', 
   assert.match(src, /JSON\.stringify\(\{ id \}\)/);
   assert.doesNotMatch(src, /JSON\.stringify\(\{ path \}\)/);
   assert.match(src, /window\.dshDesktop\?\.restartService/);
+  assert.match(src, /Skill 市场/);
+  assert.match(src, /skills\/market\/" \+ kind/);
+  assert.match(src, /kind === "install"/);
+  assert.doesNotMatch(src, /id: "model-switcher"/);
+  assert.match(src, /installModelProviderActivation/);
+  assert.match(src, /models\/providers\/switch/);
+  assert.match(src, /MCP 市场/);
+  assert.match(src, /mcp\/market\/install/);
+  assert.match(src, /registry\.modelcontextprotocol\.io/);
+  assert.match(src, /const text = current \? "已启用" : "启用"/);
+  assert.match(src, /有正在运行的任务/);
+  assert.match(src, /modelDirectories\.directoryFor/);
+  assert.match(src, /className: tab === "sessions" \? "vk_tabBody" : "vk_settingsPin"/);
+  assert.match(src, /vk_settingsPinRail/);
+  assert.doesNotMatch(src, /style: \{ display: "none" \} \}, sessionSlot/);
 });
 
 test('host manager fences Skills and atomically updates the active web profile', () => {
@@ -83,4 +99,16 @@ test('host manager fences Skills and atomically updates the active web profile',
   assert.match(src, /withFileLock\(file/);
   assert.match(src, /writeFileAtomic\(file, result\.patch, \{ mode: 0o600/);
   assert.match(src, /sameOriginMutation\(req\)/);
+  assert.match(src, /installMarketSkill/);
+  assert.match(src, /listSkillMarket/);
+  assert.match(src, /listMcpMarket/);
+  assert.match(src, /prepareMcpMarketInstall/);
+  assert.match(src, /switchModelProfile/);
+  assert.match(src, /switchModelProvider/);
+  assert.match(src, /runningAgents/);
+});
+
+test('desktop package sync includes the Skill market offline data directory', () => {
+  const src = readFileSync(join(root, 'main.js'), 'utf8');
+  assert.match(src, /copyDir\('data'\)/);
 });

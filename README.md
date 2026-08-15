@@ -2,9 +2,9 @@
 
 <p><a href="README.md">中文</a> | <a href="README.en.md">English</a></p>
 
-<h1>Deepseek Harness EAC — 揽尽万象</h1>
+<h1>DeepSeek Harness Desktop</h1>
 
-<p><strong>EAC = Embracing All Creation（揽尽万象）</strong></p>
+<p><strong>桌面版 v3.0.1</strong></p>
 
 <p>
 <a href="https://github.com/zouyuxuan122/Deepseek-Harness-EAC"><img src="https://img.shields.io/github/stars/zouyuxuan122/Deepseek-Harness-EAC?style=flat&label=%E2%AD%90&color=08C" alt="GitHub stars"></a>
@@ -16,7 +16,7 @@
 <p>把官方 <a href="https://github.com/deepseek-ai/deepseek-harness">deepseek-ai/deepseek-harness</a>（<code>@deepseek-ai/dsh</code>，一切皆插件的 agent harness）
 封装为<strong>开箱即用的 Windows 桌面客户端</strong>，并在其上拥抱社区万象：皮肤、插件、工具、记忆——你所能想到的，一键皆可装。</p>
 
-<p><a href="docs/screenshot-preview.jpg"><img src="docs/screenshot-preview.jpg" alt="Deepseek Harness EAC 界面预览"></a></p>
+<p><a href="docs/screenshot-preview.jpg"><img src="docs/screenshot-preview.jpg" alt="DeepSeek Harness Desktop 界面预览"></a></p>
 
 </div>
 
@@ -24,7 +24,7 @@
 
 ## 相比原版 DeepSeek Harness 的优势
 
-| 能力 | 原版 dsh（官方 deepseek-harness） | Deepseek Harness EAC |
+| 能力 | 原版 dsh（官方 deepseek-harness） | DeepSeek Harness Desktop |
 | --- | --- | --- |
 | 运行方式 | 需先安装 Node.js，`npx @deepseek-ai/dsh web` + 浏览器访问 | **免装 Node**：内置独立 Node 运行时与 npm CLI，双击即用 |
 | 界面皮肤 | 仅官方默认外观 | **内置 10 款 Web UI 皮肤**（XP / QQ98 / 初音未来 / 我的世界 / 同花顺 / 鲸歌…），设置页一键互斥切换，默认不启用保持原生 |
@@ -34,7 +34,7 @@
 | 余额查看 | 手动上官网查 | 对话底部内联「**本轮 ¥X · 余额 ¥Y**」实时小部件，点击跳转充值 |
 | 文件管理 | 手动翻目录 | 文件树、搜索、Git 状态、多标签查看/编辑、新建/重命名/回收站删除；另有**会话文件更改追踪 + 一键还原** |
 | 会话内终端 | 无 | **终端标签页**：会话项目目录内持久 PowerShell，SSE 流式，断线重连 |
-| 配置上手 | 手编 YAML | **设置页可视化**：模型/插件管理、视觉模型一键选择、`soul.md` 人设管理；皮肤与 Codex / Claude Code 一键迁移集中在「高级设置」 |
+| 配置上手 | 手编 YAML | **设置页可视化**：同时配置多家模型供应商并用命名方案一键切换、插件管理、视觉模型选择、`soul.md` 人设管理；皮肤与 Codex / Claude Code 一键迁移集中在「高级设置」 |
 | 插件安装 | 手动 npm | 设置页内置**插件市场**，搜索/一键安装/卸载 dsh 插件 |
 | 更新 | 手动 `npm update` | **双重自动更新**：官方 agent 更新（npm overlay，失败可回退）+ 客户端本体自更新，均经用户同意 |
 | 任务通知 | 无 | agent 任务完成弹 **Windows 系统通知**，点击回到窗口 |
@@ -85,7 +85,7 @@
 - 文件区支持懒加载树、隐藏项折叠、文件名递归搜索、Git `M/A/D/R/U` 状态、Shiki 明暗主题高亮、行号、标签拖拽排序与状态持久化。
 - 文本文件可进入编辑模式并用 `Ctrl+S` 原子保存；保存前检查磁盘版本，避免静默覆盖外部修改。支持新建文件/目录、行内重命名和可恢复删除（Windows 回收站 / macOS 废纸篓 / Linux `gio trash`）。
 - 手动选择的目录会先登记为正式 DSH 工作区；文件接口只接受已登记工作区内的真实路径，并限制文件大小、搜索深度与结果数量。
-- 设置页新增 Skill / MCP 管理：Skill 仅管理 `DSH_HOME/skills` 顶层条目；MCP 直接管理当前 web profile 的 `cordis.patch.yml`，支持添加、开关、删除并一键重启服务生效。
+- 设置页新增 Skill / MCP 管理：Skill 支持已安装条目管理以及带离线目录、缓存、国内/自建镜像的 Skill 市场；市场可搜索、预览 `SKILL.md`，安装固定 Git commit、校验文件并默认关闭，不执行第三方脚本。MCP 直接管理当前 web profile 的 `cordis.patch.yml`，支持添加、开关、删除并一键重启服务生效。
 - 该能力以 profile 插件替换根布局，不覆盖官方安装目录；官方升级后仍可回退。实现基于导入的 `dsh-vscode-layout-master`（anoslide，MIT），仅迁移与 EAC 互补的布局和文件能力。
 
 ### 界面皮肤自定义（EAC 特色）

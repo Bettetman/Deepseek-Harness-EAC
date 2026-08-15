@@ -155,7 +155,7 @@ window.__ModuleLoader__.load({
 			".vk_frame{background:var(--dsw-alias-bg-base);height:100%;display:grid;grid-template-rows:100%;position:relative;overflow:hidden;--vk-accent:var(--dsw-alias-accent,var(--dsw-alias-state-business-primary));--vk-accent-ring:color-mix(in srgb,var(--vk-accent) 22%,transparent);--vk-accent-soft:color-mix(in srgb,var(--vk-accent) 12%,transparent)}",
 			".vk_frame[data-native] .vk_colRight{border-left:none}",
 			".vk_frame[data-dragging]{user-select:none;cursor:col-resize}",
-			".vk_colLeft{background:var(--dsw-specific-sidebar-fill);border-right:1px solid var(--dsw-alias-border-l1);min-width:0;overflow:hidden;display:flex;flex-direction:column}",
+			".vk_colLeft{background:var(--dsw-specific-sidebar-fill);border-right:1px solid var(--dsw-alias-border-l1);min-width:0;overflow:hidden;display:flex;flex-direction:column;position:relative}",
 			".vk_colCenter{flex-direction:column;min-width:0;display:flex;overflow:hidden}",
 			".vk_colRight{border-left:1px solid var(--dsw-alias-border-l2);min-width:0;overflow:hidden;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base)}",
 			".vk_overlayLayer{z-index:20;pointer-events:none;position:absolute;inset:0}.vk_overlayLayer>*{pointer-events:auto}",
@@ -177,6 +177,16 @@ window.__ModuleLoader__.load({
 			".vk_tabBody{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}",
 			".vk_tabBodyHidden{display:none}",
 			".vk_tabBarSpacer{flex:1}",
+			// 文件页复用官方 sidebar 的设置入口：只显露其 foot 中的 settings seat，
+			// 因而点击后仍由官方 SettingsRoot 打开同一个弹窗和本地状态。
+			".vk_filesBody{padding-bottom:50px}",
+			".vk_settingsPin{position:absolute;left:0;right:0;bottom:0;z-index:5;height:50px;overflow:visible;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-specific-sidebar-fill)}",
+			".vk_settingsPin>div{box-sizing:border-box!important;width:100%!important;height:49px!important;padding:4px 12px 5px!important;background:var(--dsw-specific-sidebar-fill)!important}",
+			".vk_settingsPin>div>:not(:last-child){display:none!important}",
+			".vk_settingsPin>div>:last-child{height:40px!important;display:flex!important;flex:none!important;justify-content:flex-end!important}",
+			".vk_settingsPin>div>:last-child>:first-child{display:none!important}",
+			".vk_settingsPinRail{position:static;flex:none;width:56px;height:50px;border-top:1px solid var(--dsw-alias-border-l1)}",
+			".vk_settingsPinRail>div{padding:0 10px 4px!important}",
 			// ── rail 窄条（左栏收起态）：图标 + accent 指示条 ────────────
 			".vk_rail{align-items:center;padding:10px 0;gap:4px}",
 			".vk_railBtn{appearance:none;border:none;background:none;cursor:pointer;width:38px;height:38px;border-radius:9px;font-size:17px;line-height:1;color:var(--dsw-alias-label-secondary);display:flex;align-items:center;justify-content:center;position:relative;transition:background-color .12s,color .12s,transform .08s}",
@@ -389,7 +399,28 @@ window.__ModuleLoader__.load({
 			".vk_mgrAddForm{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--dsw-alias-border-l2);border-radius:8px;padding:12px;margin-bottom:10px}",
 			".vk_mgrInput{background:var(--dsw-specific-input-fill,var(--dsw-specific-sidebar-fill));color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:6px 10px;font-size:12.5px;font-family:inherit}",
 			".vk_mgrInput:focus{outline:none;border-color:var(--vk-accent)}",
-			".vk_mgrLabel{font-size:11.5px;color:var(--dsw-alias-label-secondary)}"
+			".vk_mgrLabel{font-size:11.5px;color:var(--dsw-alias-label-secondary)}",
+			".vk_mgrTabs{display:flex;gap:4px;border-bottom:1px solid var(--dsw-alias-border-l1);margin-bottom:12px}",
+			".vk_mgrTab{appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);padding:7px 13px;cursor:pointer;font:inherit;font-size:12.5px}",
+			".vk_mgrTabOn{color:var(--dsw-alias-label-primary);border-bottom-color:var(--vk-accent);font-weight:600}",
+			".vk_marketTools{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}",
+			".vk_marketSearch{flex:1;min-width:180px}",
+			".vk_marketStatus{font-size:11.5px;color:var(--dsw-alias-label-secondary);margin:-3px 0 10px}",
+			".vk_marketWarning{color:#cca700}",
+			".vk_marketOfficial{color:#4fc1ff;background:rgba(79,193,255,.12)}",
+			".vk_marketPreview{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:10px;margin:0 0 10px;background:var(--dsw-specific-input-fill,var(--dsw-specific-sidebar-fill))}",
+			".vk_marketPreview pre{max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:11.5px;line-height:1.5;margin:8px 0 0;padding:9px;border-radius:6px;background:rgba(0,0,0,.16)}",
+			".vk_marketConfig{margin-bottom:10px}",
+			".vk_marketConfigGrid{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;align-items:center}",
+			".vk_modelCurrent{border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:11px 13px;background:var(--vk-accent-soft);margin-bottom:10px}",
+			".vk_modelGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}",
+			".vk_modelProfile{border:1px solid var(--dsw-alias-border-l1);border-radius:9px;padding:11px;display:flex;flex-direction:column;gap:8px;background:var(--dsw-specific-input-fill,var(--dsw-specific-sidebar-fill))}",
+			".vk_modelActions{display:flex;gap:7px;justify-content:flex-end;align-items:center}",
+			".vk_modelActivate[data-current=true]{color:var(--dsw-alias-state-success-primary);border-color:color-mix(in srgb,var(--dsw-alias-state-success-primary) 45%,transparent)}",
+			".vk_modelActivationMessage{box-sizing:border-box;margin:0 0 4px;padding:8px 10px;border-radius:8px;font-size:12px;line-height:18px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}",
+			".vk_modelActivationMessage[data-kind=error]{color:var(--dsw-alias-state-error-primary);background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 10%,transparent)}",
+			".vk_modelActivationMessage[data-kind=success]{color:var(--dsw-alias-state-success-primary);background:color-mix(in srgb,var(--dsw-alias-state-success-primary) 10%,transparent)}",
+			"@media(max-width:720px){.vk_mgrRow{align-items:flex-start;flex-wrap:wrap}.vk_mgrInfo{flex-basis:100%}.vk_marketConfigGrid{grid-template-columns:1fr}}"
 		].join("");
 		{
 			const tagId = "@anoslide/dsh-client-vscode-layout/vscode.module.css";
@@ -1110,39 +1141,93 @@ window.__ModuleLoader__.load({
 		}
 
 		// ──────────────────────────────────────────────────────────────
-		// 组件：Skill 管理分区（DSH_HOME/skills，开关/删除）
+		// 组件：Skill 管理分区（已安装 + 可离线回退的安全市场）
 		// ──────────────────────────────────────────────────────────────
 		function SkillSection() {
+			const [tab, setTab] = react.useState("installed");
 			const [skills, setSkills] = react.useState(null);
-			const [busy, setBusy] = react.useState(false);
+			const [market, setMarket] = react.useState(null);
+			const [query, setQuery] = react.useState("");
+			const [preview, setPreview] = react.useState(null);
+			const [previewKey, setPreviewKey] = react.useState("");
+			const [busy, setBusy] = react.useState("");
 			const [err, setErr] = react.useState(null);
-			const refresh = react.useCallback(() => {
+			const [notice, setNotice] = react.useState(null);
+			const [showConfig, setShowConfig] = react.useState(false);
+			const [config, setConfig] = react.useState({ catalogUrl: "https://skills.sh/", githubApiBase: "https://api.github.com" });
+			const refreshInstalled = react.useCallback(() => {
 				let dead = false;
-				setBusy(true);
+				setBusy("installed");
 				fetch("/vscode-files/skills")
 					.then((r) => r.json())
-					.then((d) => { if (!dead) { setSkills(d && d.ok ? d.skills : []); setErr(null); } })
+					.then((d) => { if (!dead) { if (!d || !d.ok) throw new Error((d && d.error) || "加载失败"); setSkills(d.skills || []); setErr(null); } })
 					.catch((e) => { if (!dead) setErr(String(e)); })
-					.finally(() => { if (!dead) setBusy(false); });
+					.finally(() => { if (!dead) setBusy(""); });
 				return () => { dead = true; };
 			}, []);
-			react.useEffect(refresh, [refresh]);
+			const refreshMarket = react.useCallback((online) => {
+				setBusy("market");
+				setErr(null);
+				setNotice(null);
+				fetch("/vscode-files/skills/market" + (online ? "?refresh=1" : ""))
+					.then((r) => r.json())
+					.then((d) => {
+						if (!d || !d.ok) throw new Error((d && d.error) || "市场加载失败");
+						setMarket(d);
+						if (d.config) setConfig(d.config);
+					})
+					.catch((e) => setErr(String(e)))
+					.finally(() => setBusy(""));
+			}, []);
+			react.useEffect(refreshInstalled, [refreshInstalled]);
+			react.useEffect(() => { if (tab === "market" && market === null) refreshMarket(false); }, [tab, market, refreshMarket]);
 			const act = (id, kind) => {
-				setBusy(true);
+				setBusy("installed");
 				setErr(null);
 				fetch("/vscode-files/skills/" + kind, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) })
 					.then((r) => r.json())
-					.then((d) => { if (!d || !d.ok) setErr((d && d.error) || "操作失败"); refresh(); })
-					.catch((e) => { setErr(String(e)); setBusy(false); });
+					.then((d) => { if (!d || !d.ok) throw new Error((d && d.error) || "操作失败"); refreshInstalled(); })
+					.catch((e) => { setErr(String(e)); setBusy(""); });
 			};
-			return h("div", { className: "vk_personaSection" },
+			const marketAction = (entry, kind) => {
+				const key = entry.source + ":" + entry.skillId;
+				setBusy(kind + ":" + key);
+				setErr(null);
+				setNotice(null);
+				if (kind === "preview") { setPreviewKey(key); setPreview(null); }
+				fetch("/vscode-files/skills/market/" + kind, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source: entry.source, skillId: entry.skillId }) })
+					.then((r) => r.json())
+					.then((d) => {
+						if (!d || !d.ok) throw new Error((d && d.error) || (kind === "install" ? "安装失败" : "预览失败"));
+						if (kind === "preview") setPreview(d.preview);
+						else {
+							setNotice("已安全安装「" + entry.name + "」，默认为关闭状态；请在“已安装”中确认后开启。");
+							refreshInstalled();
+						}
+					})
+					.catch((e) => setErr(String(e)))
+					.finally(() => setBusy(""));
+			};
+			const saveConfig = () => {
+				setBusy("config");
+				setErr(null);
+				fetch("/vscode-files/skills/market/config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(config) })
+					.then((r) => r.json())
+					.then((d) => { if (!d || !d.ok) throw new Error((d && d.error) || "保存失败"); setConfig(d.config); setNotice("市场网络配置已保存，正在刷新目录…"); refreshMarket(true); })
+					.catch((e) => { setErr(String(e)); setBusy(""); });
+			};
+			const installedIds = new Set((skills || []).map((s) => s.id));
+			const entries = (market && market.entries || []).filter((entry) => {
+				const q = query.trim().toLowerCase();
+				return !q || (entry.name + " " + entry.skillId + " " + entry.source + " " + (entry.description || "")).toLowerCase().includes(q);
+			});
+			const installedView = h("div", null,
 				h("div", { className: "vk_mgrHead" },
-					h("div", { className: "vk_personaDesc", style: { flex: 1 } }, "管理 DSH_HOME/skills 下的全局 Skill（目录含 SKILL.md，或单文件 .md）。关闭只标记 .disabled；删除会送入系统回收站。"),
-					h("button", { className: "vk_mgrBtn", onClick: refresh, disabled: busy }, "刷新")
+					h("div", { className: "vk_personaDesc", style: { flex: 1 } }, "管理 DSH_HOME/skills 下的全局 Skill。关闭只标记 .disabled；删除会送入系统回收站。"),
+					h("button", { className: "vk_mgrBtn", onClick: refreshInstalled, disabled: !!busy }, "刷新")
 				),
-				err !== null ? h("div", { className: "vk_personaMsg vk_personaMsgErr" }, String(err)) : null,
 				skills === null ? h("div", { className: "vk_mgrEmpty" }, "加载中…")
-					: skills.length === 0 ? h("div", { className: "vk_mgrEmpty" }, "暂无全局 Skill（DSH_HOME/skills 为空）")
+					: skills.length === 0 ? h("div", { className: "vk_mgrEmpty" }, "暂无全局 Skill，可前往“Skill 市场”安装")
 					: h("div", { className: "vk_mgrList" },
 						skills.map((s) => h("div", { key: s.id, className: "vk_mgrRow" },
 							h("div", { className: "vk_mgrInfo" },
@@ -1150,41 +1235,393 @@ window.__ModuleLoader__.load({
 								h("div", { className: "vk_mgrMeta" }, (s.kind === "dir" ? "目录" : "单文件") + " · " + s.location)
 							),
 							h("span", { className: "vk_mgrBadge " + (s.enabled ? "vk_mgrBadgeOn" : "vk_mgrBadgeOff") }, s.enabled ? "开启" : "关闭"),
-							h("button", { className: "vk_mgrBtn", disabled: busy, onClick: () => act(s.id, "toggle") }, s.enabled ? "关闭" : "开启"),
-							h("button", { className: "vk_mgrBtn vk_mgrBtnDanger", disabled: busy, onClick: () => { if (window.confirm("确定删除 Skill「" + s.name + "」？（送回收站，可恢复）")) act(s.id, "delete"); } }, "删除")
+							h("button", { className: "vk_mgrBtn", disabled: !!busy, onClick: () => act(s.id, "toggle") }, s.enabled ? "关闭" : "开启"),
+							h("button", { className: "vk_mgrBtn vk_mgrBtnDanger", disabled: !!busy, onClick: () => { if (window.confirm("确定删除 Skill「" + s.name + "」？（送回收站，可恢复）")) act(s.id, "delete"); } }, "删除")
 						))
 					)
 			);
+			const sourceName = market && market.source === "online" ? "在线目录" : market && market.source === "cache" ? "本地缓存" : "内置离线目录";
+			const marketView = h("div", null,
+				h("div", { className: "vk_personaDesc", style: { marginBottom: 9 } }, "浏览 skills.sh 生态中的 Skill。安装时固定 Git commit，仅复制通过路径与大小校验的文件，不执行仓库脚本；首次安装默认关闭。"),
+				h("div", { className: "vk_marketTools" },
+					h("input", { className: "vk_mgrInput vk_marketSearch", value: query, onChange: (e) => setQuery(e.target.value), placeholder: "搜索名称、仓库或说明" }),
+					h("button", { className: "vk_mgrBtn", disabled: !!busy, onClick: () => refreshMarket(true) }, busy === "market" ? "刷新中…" : "刷新在线目录"),
+					h("button", { className: "vk_mgrBtn", onClick: () => setShowConfig(!showConfig) }, showConfig ? "收起网络配置" : "网络配置")
+				),
+				showConfig ? h("div", { className: "vk_mgrAddForm vk_marketConfig" },
+					h("div", { className: "vk_marketConfigGrid" },
+						h("div", { className: "vk_mgrLabel" }, "市场目录 / 国内镜像"),
+						h("input", { className: "vk_mgrInput", value: config.catalogUrl, onChange: (e) => setConfig({ ...config, catalogUrl: e.target.value }), placeholder: "https://skills.sh/ 或兼容 JSON 镜像" }),
+						h("div", { className: "vk_mgrLabel" }, "GitHub API / 加速镜像"),
+						h("input", { className: "vk_mgrInput", value: config.githubApiBase, onChange: (e) => setConfig({ ...config, githubApiBase: e.target.value }), placeholder: "https://api.github.com" })
+					),
+					h("div", { className: "vk_personaFoot" },
+						h("span", { className: "vk_mgrLabel" }, "也可通过 DSH_SKILL_MARKET_CATALOG_URL / DSH_GITHUB_API_BASE 环境变量统一配置。"),
+						h("div", { style: { flex: 1 } }),
+						h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: !!busy, onClick: saveConfig }, busy === "config" ? "保存中…" : "保存并刷新")
+					)
+				) : null,
+				market ? h("div", { className: "vk_marketStatus" + (market.warning ? " vk_marketWarning" : "") }, "当前来源：" + sourceName + " · " + market.entries.length + " 项" + (market.updatedAt ? " · 更新于 " + new Date(market.updatedAt).toLocaleString() : "") + (market.warning ? " · " + market.warning : "")) : null,
+				notice ? h("div", { className: "vk_personaMsg vk_personaMsgOk", style: { marginBottom: 9 } }, notice) : null,
+				previewKey ? h("div", { className: "vk_marketPreview" },
+					h("div", { className: "vk_mgrHead", style: { marginBottom: 0 } },
+						h("div", { className: "vk_mgrInfo" },
+							h("div", { className: "vk_mgrName" }, preview ? preview.name : "正在读取 SKILL.md…"),
+							preview ? h("div", { className: "vk_mgrMeta" }, preview.source + " · " + preview.path + " · commit " + preview.commit.slice(0, 12) + " · " + preview.fileCount + " 个文件") : null
+						),
+						h("button", { className: "vk_mgrBtn", onClick: () => { setPreviewKey(""); setPreview(null); } }, "关闭")
+					),
+					preview ? h("pre", null, preview.content) : null
+				) : null,
+				market === null ? h("div", { className: "vk_mgrEmpty" }, "加载目录中…")
+					: entries.length === 0 ? h("div", { className: "vk_mgrEmpty" }, "没有匹配的 Skill")
+					: h("div", { className: "vk_mgrList" }, entries.map((entry) => {
+						const key = entry.source + ":" + entry.skillId;
+						const installed = installedIds.has(entry.skillId);
+						return h("div", { key, className: "vk_mgrRow" },
+							h("div", { className: "vk_mgrInfo" },
+								h("div", { className: "vk_mgrName" }, entry.name),
+								h("div", { className: "vk_mgrMeta" }, entry.source + (entry.description ? " · " + entry.description : "") + (entry.installs ? " · " + Number(entry.installs).toLocaleString() + " 次安装" : ""))
+							),
+							entry.isOfficial ? h("span", { className: "vk_mgrBadge vk_marketOfficial" }, "官方") : null,
+							installed ? h("span", { className: "vk_mgrBadge vk_mgrBadgeOn" }, "已安装") : null,
+							h("button", { className: "vk_mgrBtn", disabled: !!busy, onClick: () => marketAction(entry, "preview") }, busy === "preview:" + key ? "读取中…" : "预览"),
+							h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: !!busy || installed, onClick: () => { if (window.confirm("安装 Skill「" + entry.name + "」？安装后默认为关闭状态。")) marketAction(entry, "install"); } }, busy === "install:" + key ? "安装中…" : installed ? "已安装" : "安装")
+						);
+					}))
+			);
+			return h("div", { className: "vk_personaSection" },
+				h("div", { className: "vk_mgrTabs" },
+					h("button", { className: "vk_mgrTab" + (tab === "installed" ? " vk_mgrTabOn" : ""), onClick: () => { setTab("installed"); setErr(null); } }, "已安装"),
+					h("button", { className: "vk_mgrTab" + (tab === "market" ? " vk_mgrTabOn" : ""), onClick: () => { setTab("market"); setErr(null); } }, "Skill 市场")
+				),
+				err !== null ? h("div", { className: "vk_personaMsg vk_personaMsgErr" }, String(err)) : null,
+				tab === "installed" ? installedView : marketView
+			);
+		}
+
+		// ──────────────────────────────────────────────────────────────
+		// 组件：模型方案切换（供应商/API 继续由官方“模型管理”维护）
+		// ──────────────────────────────────────────────────────────────
+		function ModelSwitcherSection({ useSessions, modelDirectories }) {
+			const currentSession = useSessions((s) => s.current);
+			const runningSessions = useSessions((s) => s.ids.filter((id) => s.byId[id] && s.byId[id].running).length);
+			const [data, setData] = react.useState(null);
+			const [busy, setBusy] = react.useState("");
+			const [error, setError] = react.useState(null);
+			const [notice, setNotice] = react.useState(null);
+			const [adding, setAdding] = react.useState(false);
+			const [form, setForm] = react.useState({ name: "", provider: "", model: "", reasoningEffort: "" });
+			const load = react.useCallback(() => {
+				setBusy("load");
+				fetch("/vscode-files/models/profiles")
+					.then((r) => r.json())
+					.then((d) => {
+						if (!d || !d.ok) throw new Error((d && d.error) || "模型方案加载失败");
+						setData(d);
+						setForm((previous) => {
+							if (previous.provider) return previous;
+							const group = d.groups && d.groups[0];
+							const model = group && group.models && group.models[0];
+							return { ...previous, provider: group ? group.id : "", model: model ? model.id : "" };
+						});
+						setError(null);
+					})
+					.catch((e) => setError(String(e)))
+					.finally(() => setBusy(""));
+			}, []);
+			react.useEffect(load, [load]);
+			const post = (path, body) => fetch("/vscode-files/models/profiles/" + path, {
+				method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+			}).then((r) => r.json()).then((d) => { if (!d || !d.ok) throw new Error((d && d.error) || "操作失败"); return d; });
+			const save = () => {
+				setBusy("save"); setError(null); setNotice(null);
+				post("save", form).then(() => {
+					setAdding(false);
+					setForm({ name: "", provider: form.provider, model: form.model, reasoningEffort: "" });
+					setNotice("模型方案已保存。供应商密钥仍由“模型管理”安全保存，不会复制到方案文件。");
+					load();
+				}).catch((e) => { setError(String(e)); setBusy(""); });
+			};
+			const remove = (profile) => {
+				setBusy("delete:" + profile.id); setError(null); setNotice(null);
+				post("delete", { id: profile.id }).then(load).catch((e) => { setError(String(e)); setBusy(""); });
+			};
+			const selectProfile = (profile) => {
+				if (runningSessions > 0) { setError("有正在运行的任务，任务结束或停止后才能切换模型。"); return; }
+				setBusy("switch:" + profile.id); setError(null); setNotice(null);
+				post("switch", { id: profile.id }).then(async (result) => {
+					let currentApplied = false;
+					if (currentSession !== undefined && runningSessions === 0 && modelDirectories) {
+						try {
+							await modelDirectories.directoryFor(currentSession).select(result.selected);
+							currentApplied = true;
+						} catch (e) {
+							setError("全局默认模型已切换，但当前会话切换失败：" + String(e));
+						}
+					}
+					setNotice("已切换到「" + profile.name + "」" + (currentApplied ? "，当前会话和后续新会话均已生效。" : "，后续新会话生效。"));
+					load();
+				}).catch((e) => { setError(String(e)); setBusy(""); });
+			};
+			const groups = data && data.groups || [];
+			const selectedGroup = groups.find((group) => group.id === form.provider) || groups[0];
+			const models = selectedGroup && selectedGroup.models || [];
+			const selectedModel = models.find((model) => model.id === form.model) || models[0];
+			const efforts = selectedModel && selectedModel.efforts || [];
+			const running = runningSessions;
+			return h("div", { className: "vk_personaSection" },
+				h("div", { className: "vk_mgrHead" },
+					h("div", { className: "vk_personaDesc", style: { flex: 1 } }, "像 CC Switch 一样保存多个模型方案并一键切换。多家供应商、API 地址、密钥和模型列表请先在左侧“模型管理”中添加；方案只引用 provider/model，不重复保存密钥。"),
+					h("button", { className: "vk_mgrBtn", disabled: !!busy || groups.length === 0, onClick: () => setAdding(!adding) }, adding ? "取消" : "＋ 新增方案"),
+					h("button", { className: "vk_mgrBtn", disabled: !!busy, onClick: load }, "刷新")
+				),
+				data ? h("div", { className: "vk_modelCurrent" },
+					h("div", { className: "vk_mgrName" }, "当前默认：" + data.current.provider + " / " + data.current.model),
+					h("div", { className: "vk_mgrMeta" }, data.current.reasoningEffort ? "推理强度：" + data.current.reasoningEffort : "使用模型默认推理强度")
+				) : null,
+				running > 0 ? h("div", { className: "vk_personaMsg vk_personaMsgErr" }, "当前有 " + running + " 个任务正在运行，所有切换按钮已锁定。") : null,
+				error ? h("div", { className: "vk_personaMsg vk_personaMsgErr" }, error) : null,
+				notice ? h("div", { className: "vk_personaMsg vk_personaMsgOk" }, notice) : null,
+				adding ? h("div", { className: "vk_mgrAddForm" },
+					h("div", { className: "vk_mgrLabel" }, "方案名称"),
+					h("input", { className: "vk_mgrInput", value: form.name, onChange: (e) => setForm({ ...form, name: e.target.value }), placeholder: "例如：DeepSeek 日常 / Claude 编程" }),
+					h("div", { className: "vk_mgrLabel" }, "供应商"),
+					h("select", { className: "vk_mgrInput", value: selectedGroup ? selectedGroup.id : "", onChange: (e) => { const group = groups.find((item) => item.id === e.target.value); const model = group && group.models[0]; setForm({ ...form, provider: e.target.value, model: model ? model.id : "", reasoningEffort: "" }); } },
+						groups.map((group) => h("option", { key: group.id, value: group.id }, group.name + "（" + group.id + "）"))
+					),
+					h("div", { className: "vk_mgrLabel" }, "模型"),
+					h("select", { className: "vk_mgrInput", value: selectedModel ? selectedModel.id : "", onChange: (e) => setForm({ ...form, model: e.target.value, reasoningEffort: "" }) },
+						models.map((model) => h("option", { key: model.id, value: model.id }, model.name + "（" + model.id + "）"))
+					),
+					efforts.length ? h("div", { className: "vk_mgrLabel" }, "推理强度") : null,
+					efforts.length ? h("select", { className: "vk_mgrInput", value: form.reasoningEffort, onChange: (e) => setForm({ ...form, reasoningEffort: e.target.value }) },
+						h("option", { value: "" }, "模型默认"),
+						efforts.map((effort) => h("option", { key: effort.id, value: effort.id }, effort.name || effort.id))
+					) : null,
+					h("div", { className: "vk_personaFoot" }, h("div", { style: { flex: 1 } }), h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: !!busy || !form.name.trim() || !selectedModel, onClick: save }, busy === "save" ? "保存中…" : "保存方案"))
+				) : null,
+				data === null ? h("div", { className: "vk_mgrEmpty" }, "加载模型目录中…")
+					: data.profiles.length === 0 ? h("div", { className: "vk_mgrEmpty" }, groups.length === 0 ? "暂无可用模型，请先在“模型管理”中配置供应商。" : "暂无模型方案，点击“＋ 新增方案”创建。")
+					: h("div", { className: "vk_modelGrid" }, data.profiles.map((profile) => h("div", { key: profile.id, className: "vk_modelProfile" },
+						h("div", { className: "vk_mgrInfo" }, h("div", { className: "vk_mgrName" }, profile.name), h("div", { className: "vk_mgrMeta" }, profile.provider + " / " + profile.model + (profile.reasoningEffort ? " · " + profile.reasoningEffort : ""))),
+						h("div", { className: "vk_modelActions" },
+							profile.active ? h("span", { className: "vk_mgrBadge vk_mgrBadgeOn" }, "当前") : null,
+							h("button", { className: "vk_mgrBtn", disabled: !!busy || running > 0 || profile.active, onClick: () => selectProfile(profile) }, busy === "switch:" + profile.id ? "切换中…" : profile.active ? "已启用" : "切换"),
+							h("button", { className: "vk_mgrBtn vk_mgrBtnDanger", disabled: !!busy, onClick: () => { if (window.confirm("确定删除模型方案「" + profile.name + "」？不会删除供应商和 API Key。")) remove(profile); } }, "删除")
+						)
+					)))
+			);
+		}
+
+		// 官方模型管理没有提供“行操作”插槽，因此在它渲染完成后把启用按钮
+		// 挂到每个提供方的编辑按钮后。模型目录和切换仍走 Host API，不读取密钥。
+		function installModelProviderActivation(ctx) {
+			const sessions = ctx.get("sessions");
+			const modelDirectories = ctx.get("modelDirectories");
+			let disposed = false;
+			let scheduled = false;
+			let loading = false;
+			let catalog = null;
+			let renderedSignature = "";
+			let loadedAt = 0;
+
+			const editButtons = () => Array.from(document.querySelectorAll("button[aria-label]")).filter((button) => {
+				const label = String(button.getAttribute("aria-label") || "");
+				if (!/^(编辑|Edit)\s+/.test(label)) return false;
+				const dialog = button.closest('[role="dialog"]');
+				if (!dialog) return false;
+				const heading = dialog.querySelector("h2");
+				return heading && /^(模型|Models?)$/i.test(String(heading.textContent || "").trim());
+			});
+
+			const targetLabel = (group) => group.name === group.id ? group.id : group.name + " (" + group.id + ")";
+			const providerFor = (button) => {
+				const label = String(button.getAttribute("aria-label") || "").replace(/^(编辑|Edit)\s+/, "");
+				return catalog && catalog.groups.find((group) => targetLabel(group) === label);
+			};
+
+			const showMessage = (button, kind, text) => {
+				const section = button.closest("ul")?.parentElement;
+				if (!section) return;
+				let message = section.querySelector(".vk_modelActivationMessage");
+				if (!message) {
+					message = document.createElement("p");
+					message.className = "vk_modelActivationMessage";
+					message.setAttribute("role", "status");
+					section.querySelector("ul")?.insertAdjacentElement("beforebegin", message);
+				}
+				message.dataset.kind = kind;
+				message.textContent = text;
+			};
+
+			const runningCount = () => {
+				const snapshot = sessions?.list?.getSnapshot?.();
+				return snapshot ? snapshot.ids.filter((id) => snapshot.byId[id]?.running).length : null;
+			};
+
+			const activate = async (button, group) => {
+				const running = runningCount() ?? Number(catalog?.running || 0);
+				if (running > 0) {
+					showMessage(button, "error", "当前有 " + running + " 个任务正在运行，结束或停止后才能切换模型。");
+					return;
+				}
+				button.disabled = true;
+				button.textContent = "切换中…";
+				try {
+					const response = await fetch("/vscode-files/models/providers/switch", {
+						method: "POST",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({ provider: group.id })
+					});
+					const result = await response.json();
+					if (!result || !result.ok) throw new Error(result?.error || "模型切换失败");
+
+					let currentApplied = false;
+					const snapshot = sessions?.list?.getSnapshot?.();
+					const nowRunning = snapshot ? snapshot.ids.filter((id) => snapshot.byId[id]?.running).length : 0;
+					if (snapshot?.current !== undefined && nowRunning === 0 && modelDirectories) {
+						await modelDirectories.directoryFor(snapshot.current).select(result.selected);
+						currentApplied = true;
+					}
+					catalog = { ...catalog, current: result.selected, running: nowRunning };
+					showMessage(button, "success", "已启用「" + group.name + "」的 " + result.selected.model + (currentApplied ? "，当前会话和后续新会话均已切换。" : "，后续新会话将使用该模型。"));
+				} catch (error) {
+					showMessage(button, "error", String(error?.message || error));
+				} finally {
+					render();
+				}
+			};
+
+			const render = () => {
+				if (disposed || !catalog) return;
+				const buttons = editButtons();
+				const running = runningCount() ?? Number(catalog.running || 0);
+				for (const edit of buttons) {
+					const group = providerFor(edit);
+					if (!group) continue;
+					const actions = edit.parentElement;
+					if (!actions) continue;
+					let button = Array.from(actions.children).find((node) => node.dataset?.modelProvider === group.id);
+					if (!button) {
+						button = document.createElement("button");
+						button.type = "button";
+						button.className = edit.className + " vk_modelActivate";
+						button.dataset.modelProvider = group.id;
+						button.addEventListener("click", () => activate(button, group));
+						edit.insertAdjacentElement("afterend", button);
+					}
+					const current = catalog.current?.provider === group.id;
+					const currentValue = current ? "true" : "false";
+					const disabled = current || running > 0;
+					const text = current ? "已启用" : "启用";
+					const aria = (current ? "已启用 " : "启用 ") + targetLabel(group);
+					const title = running > 0 && !current ? "有任务正在运行，暂时不能切换" : "";
+					if (button.dataset.current !== currentValue) button.dataset.current = currentValue;
+					if (button.disabled !== disabled) button.disabled = disabled;
+					if (button.textContent !== text) button.textContent = text;
+					if (button.getAttribute("aria-label") !== aria) button.setAttribute("aria-label", aria);
+					if (button.title !== title) button.title = title;
+				}
+			};
+
+			const refresh = async (signature) => {
+				if (loading || disposed) return;
+				loading = true;
+				try {
+					const response = await fetch("/vscode-files/models/providers", { cache: "no-store" });
+					const next = await response.json();
+					if (!next || !next.ok) throw new Error(next?.error || "模型提供方加载失败");
+					catalog = next;
+					renderedSignature = signature;
+					loadedAt = Date.now();
+					render();
+				} catch (error) {
+					const first = editButtons()[0];
+					if (first) showMessage(first, "error", String(error?.message || error));
+				} finally {
+					loading = false;
+				}
+			};
+
+			const scan = () => {
+				scheduled = false;
+				if (disposed) return;
+				const buttons = editButtons();
+				if (!buttons.length) return;
+				const signature = buttons.map((button) => button.getAttribute("aria-label")).sort().join("|");
+				if (!catalog || signature !== renderedSignature || Date.now() - loadedAt > 1500) void refresh(signature);
+				else render();
+			};
+
+			const schedule = () => {
+				if (scheduled || disposed) return;
+				scheduled = true;
+				queueMicrotask(scan);
+			};
+			const observer = new MutationObserver(schedule);
+			observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-label"] });
+			const stopSessions = sessions?.list?.subscribe?.(schedule);
+			schedule();
+			return () => {
+				disposed = true;
+				observer.disconnect();
+				if (typeof stopSessions === "function") stopSessions();
+				for (const button of document.querySelectorAll(".vk_modelActivate")) button.remove();
+			};
 		}
 
 		// ──────────────────────────────────────────────────────────────
 		// 组件：MCP 管理分区（直接管理 web profile 的 cordis.patch.yml）
 		// ──────────────────────────────────────────────────────────────
 		function MCPSection() {
+			const [tab, setTab] = react.useState("installed");
 			const [servers, setServers] = react.useState(null);
-			const [busy, setBusy] = react.useState(false);
+			const [busy, setBusy] = react.useState("");
 			const [err, setErr] = react.useState(null);
 			const [showAdd, setShowAdd] = react.useState(false);
 			const [restartNeeded, setRestartNeeded] = react.useState(false);
 			const [form, setForm] = react.useState({ serverName: "", transport: "stdio", command: "", args: "", url: "", env: "{}" });
-			const refresh = react.useCallback(() => {
+			const [market, setMarket] = react.useState(null);
+			const [query, setQuery] = react.useState("");
+			const [showMarketConfig, setShowMarketConfig] = react.useState(false);
+			const [marketConfig, setMarketConfig] = react.useState({ catalogUrl: "", npmRegistry: "" });
+			const [marketDraft, setMarketDraft] = react.useState(null);
+			const refreshInstalled = react.useCallback(() => {
 				let dead = false;
-				setBusy(true);
+				setBusy("installed");
 				fetch("/vscode-files/mcp")
 					.then((r) => r.json())
 					.then((d) => { if (!dead) { setServers(d && d.ok ? d.servers : []); setErr(null); } })
 					.catch((e) => { if (!dead) setErr(String(e)); })
-					.finally(() => { if (!dead) setBusy(false); });
+					.finally(() => { if (!dead) setBusy(""); });
 				return () => { dead = true; };
 			}, []);
-			react.useEffect(refresh, [refresh]);
+			react.useEffect(refreshInstalled, [refreshInstalled]);
+			const loadMarket = (force, search = query) => {
+				setBusy("market");
+				setErr(null);
+				const params = new URLSearchParams();
+				if (force) params.set("refresh", "1");
+				if (search.trim()) params.set("q", search.trim());
+				fetch("/vscode-files/mcp/market?" + params)
+					.then((r) => r.json())
+					.then((d) => {
+						if (!d || !d.ok) throw new Error((d && d.error) || "MCP 市场加载失败");
+						setMarket(d);
+						setMarketConfig(d.config || { catalogUrl: "", npmRegistry: "" });
+					})
+					.catch((e) => setErr(String(e)))
+					.finally(() => setBusy(""));
+			};
+			react.useEffect(() => { if (tab === "market" && market === null) loadMarket(false, ""); }, [tab, market]);
 			const act = (id, kind) => {
-				setBusy(true);
+				setBusy(kind + ":" + id);
 				setErr(null);
 				fetch("/vscode-files/mcp/" + kind, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) })
 					.then((r) => r.json())
-					.then((d) => { if (!d || !d.ok) setErr((d && d.error) || "操作失败"); else if (d.restartRequired) setRestartNeeded(true); refresh(); })
-					.catch((e) => { setErr(String(e)); setBusy(false); });
+					.then((d) => { if (!d || !d.ok) { setErr((d && d.error) || "操作失败"); setBusy(""); } else { if (d.restartRequired) setRestartNeeded(true); refreshInstalled(); } })
+					.catch((e) => { setErr(String(e)); setBusy(""); });
 			};
 			const submitAdd = () => {
 				let env = {};
@@ -1195,7 +1632,7 @@ window.__ModuleLoader__.load({
 					setErr("环境变量需为 JSON 对象，如 {\"KEY\":\"value\"}");
 					return;
 				}
-				setBusy(true);
+				setBusy("add");
 				setErr(null);
 				const payload = {
 					serverName: form.serverName.trim(),
@@ -1209,24 +1646,69 @@ window.__ModuleLoader__.load({
 				fetch("/vscode-files/mcp/add", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })
 					.then((r) => r.json())
 					.then((d) => {
-						setBusy(false);
+						setBusy("");
 						if (!d || !d.ok) setErr((d && d.error) || "添加失败");
 						else {
 							setShowAdd(false);
 							setForm({ serverName: "", transport: "stdio", command: "", args: "", url: "", env: "{}" });
 							if (d.restartRequired) setRestartNeeded(true);
-							refresh();
+							refreshInstalled();
 						}
 					})
-					.catch((e) => { setBusy(false); setErr(String(e)); });
+					.catch((e) => { setBusy(""); setErr(String(e)); });
 			};
-			return h("div", { className: "vk_personaSection" },
+			const saveMarketNetwork = () => {
+				setBusy("market-config");
+				setErr(null);
+				fetch("/vscode-files/mcp/market/config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(marketConfig) })
+					.then((r) => r.json())
+					.then((d) => {
+						if (!d || !d.ok) throw new Error((d && d.error) || "网络配置保存失败");
+						setMarketConfig(d.config);
+						setShowMarketConfig(false);
+						loadMarket(true, query);
+					})
+					.catch((e) => { setErr(String(e)); setBusy(""); });
+			};
+			const openMarketInstall = (entry) => {
+				const fields = entry.transport === "stdio" ? entry.variables : entry.headers;
+				const values = {};
+				for (const field of fields || []) if (field.default !== undefined) values[field.name] = field.default;
+				const rawName = String(entry.id || "mcp").split(/[/:]/).pop().replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64) || "market-mcp";
+				setMarketDraft({ entry, serverName: rawName, extraArgs: JSON.stringify(entry.suggestedArgs || []), values });
+				setErr(null);
+			};
+			const submitMarketInstall = () => {
+				if (!marketDraft) return;
+				let extraArgs = [];
+				try {
+					extraArgs = JSON.parse(marketDraft.extraArgs || "[]");
+					if (!Array.isArray(extraArgs)) throw new Error("not array");
+				} catch {
+					setErr("启动参数必须是 JSON 数组，例如 [\"--port\",\"3000\"]");
+					return;
+				}
+				setBusy("market-install");
+				setErr(null);
+				const payload = { id: marketDraft.entry.id, serverName: marketDraft.serverName, extraArgs };
+				if (marketDraft.entry.transport === "stdio") payload.env = marketDraft.values;
+				else payload.headers = marketDraft.values;
+				fetch("/vscode-files/mcp/market/install", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })
+					.then((r) => r.json())
+					.then((d) => {
+						if (!d || !d.ok) throw new Error((d && d.error) || "MCP 安装失败");
+						setMarketDraft(null);
+						setRestartNeeded(true);
+						refreshInstalled();
+					})
+					.catch((e) => { setErr(String(e)); setBusy(""); });
+			};
+			const installedView = h("div", null,
 				h("div", { className: "vk_mgrHead" },
 					h("div", { className: "vk_personaDesc", style: { flex: 1 } }, "管理 profiles/web/cordis.patch.yml 中的 MCP server。密钥只写入本机配置，不会在列表中回显；修改后需重启服务。"),
 					h("button", { className: "vk_mgrBtn", onClick: () => setShowAdd(!showAdd) }, showAdd ? "取消添加" : "＋ 添加 MCP"),
-					h("button", { className: "vk_mgrBtn", onClick: refresh, disabled: busy }, "刷新")
+					h("button", { className: "vk_mgrBtn", onClick: refreshInstalled, disabled: !!busy }, "刷新")
 				),
-				err !== null ? h("div", { className: "vk_personaMsg vk_personaMsgErr" }, String(err)) : null,
 				showAdd ? h("div", { className: "vk_mgrAddForm" },
 					h("div", { className: "vk_mgrLabel" }, "serverName（唯一标识，1-32 位字母/数字/_-）"),
 					h("input", { className: "vk_mgrInput", value: form.serverName, onChange: (e) => setForm({ ...form, serverName: e.target.value }), placeholder: "my-server" }),
@@ -1254,15 +1736,8 @@ window.__ModuleLoader__.load({
 					h("div", { className: "vk_personaFoot" },
 						h("button", { className: "vk_mgrBtn", onClick: () => setShowAdd(false) }, "取消"),
 						h("div", { style: { flex: 1 } }),
-						h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: busy, onClick: submitAdd }, "添加并启用")
+						h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: !!busy, onClick: submitAdd }, busy === "add" ? "添加中…" : "添加并启用")
 					)
-				) : null,
-				restartNeeded ? h("div", { className: "vk_personaFoot" },
-					h("span", { className: "vk_personaMsg vk_personaMsgOk" }, "MCP 配置已保存，重启服务后生效。"),
-					h("div", { style: { flex: 1 } }),
-					typeof window.dshDesktop?.restartService === "function"
-						? h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", onClick: () => { if (window.confirm("重启会中断当前运行中的会话（历史记录保留）。确定重启吗？")) window.dshDesktop.restartService(); } }, "立即重启服务")
-						: null
 				) : null,
 				servers === null ? h("div", { className: "vk_mgrEmpty" }, "加载中…")
 					: servers.length === 0 ? h("div", { className: "vk_mgrEmpty" }, "暂无 MCP server，点「＋ 添加 MCP」添加")
@@ -1273,10 +1748,88 @@ window.__ModuleLoader__.load({
 								h("div", { className: "vk_mgrMeta" }, (s.transport === "stdio" ? (s.command || "stdio") : (s.url || "http")) + (s.hasEnv ? " · 含环境变量" : ""))
 							),
 							h("span", { className: "vk_mgrBadge " + (s.enabled ? "vk_mgrBadgeOn" : "vk_mgrBadgeOff") }, s.enabled ? "开启" : "关闭"),
-							h("button", { className: "vk_mgrBtn", disabled: busy, onClick: () => act(s.id, "toggle") }, s.enabled ? "关闭" : "开启"),
-							h("button", { className: "vk_mgrBtn vk_mgrBtnDanger", disabled: busy, onClick: () => { if (window.confirm("确定删除 MCP「" + s.serverName + "」？")) act(s.id, "delete"); } }, "删除")
+							h("button", { className: "vk_mgrBtn", disabled: !!busy, onClick: () => act(s.id, "toggle") }, busy === "toggle:" + s.id ? "保存中…" : s.enabled ? "关闭" : "开启"),
+							h("button", { className: "vk_mgrBtn vk_mgrBtnDanger", disabled: !!busy, onClick: () => { if (window.confirm("确定删除 MCP「" + s.serverName + "」？")) act(s.id, "delete"); } }, "删除")
 						))
 					)
+			);
+			const installedPackages = new Set((servers || []).map((server) => server.marketPackage).filter(Boolean));
+			const installedUrls = new Set((servers || []).map((server) => server.url).filter(Boolean));
+			const sourceName = market?.source === "online" ? "MCP 官方 Registry" : market?.source === "cache" ? "本地缓存" : "内置离线目录";
+			const marketView = h("div", null,
+				h("div", { className: "vk_personaDesc", style: { marginBottom: 9 } }, "目录来自 MCP 官方 Registry。官方登记不代表代码审核；安装只写入配置且默认关闭，不会下载或执行第三方 MCP。"),
+				h("div", { className: "vk_marketTools" },
+					h("input", { className: "vk_mgrInput vk_marketSearch", value: query, onChange: (e) => setQuery(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") loadMarket(true, query); }, placeholder: "搜索 MCP 名称、包名或功能" }),
+					h("button", { className: "vk_mgrBtn", disabled: !!busy, onClick: () => loadMarket(true, query) }, busy === "market" ? "查询中…" : "查询官方目录"),
+					h("button", { className: "vk_mgrBtn", onClick: () => setShowMarketConfig(!showMarketConfig) }, showMarketConfig ? "收起网络配置" : "网络配置")
+				),
+				showMarketConfig ? h("div", { className: "vk_mgrAddForm vk_marketConfig" },
+					h("div", { className: "vk_marketConfigGrid" },
+						h("div", { className: "vk_mgrLabel" }, "官方目录 / 国内镜像"),
+						h("input", { className: "vk_mgrInput", value: marketConfig.catalogUrl, onChange: (e) => setMarketConfig({ ...marketConfig, catalogUrl: e.target.value }), placeholder: "https://registry.modelcontextprotocol.io/v0.1/servers" }),
+						h("div", { className: "vk_mgrLabel" }, "npm 下载镜像"),
+						h("input", { className: "vk_mgrInput", value: marketConfig.npmRegistry, onChange: (e) => setMarketConfig({ ...marketConfig, npmRegistry: e.target.value }), placeholder: "https://registry.npmmirror.com" })
+					),
+					h("div", { className: "vk_personaFoot" },
+						h("span", { className: "vk_mgrLabel" }, "也可用 DSH_MCP_MARKET_CATALOG_URL / DSH_NPM_REGISTRY 统一配置。"),
+						h("div", { style: { flex: 1 } }),
+						h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: !!busy, onClick: saveMarketNetwork }, busy === "market-config" ? "保存中…" : "保存并刷新")
+					)
+				) : null,
+				market ? h("div", { className: "vk_marketStatus" + (market.warning ? " vk_marketWarning" : "") }, "当前来源：" + sourceName + " · " + market.entries.length + " 项" + (market.updatedAt ? " · 更新于 " + new Date(market.updatedAt).toLocaleString() : "") + (market.warning ? " · " + market.warning : "")) : null,
+				marketDraft ? h("div", { className: "vk_marketPreview" },
+					h("div", { className: "vk_mgrHead", style: { marginBottom: 0 } },
+						h("div", { className: "vk_mgrInfo" },
+							h("div", { className: "vk_mgrName" }, "安装 " + marketDraft.entry.name),
+							h("div", { className: "vk_mgrMeta" }, marketDraft.entry.transport === "stdio" ? marketDraft.entry.package + "@" + marketDraft.entry.packageVersion : marketDraft.entry.url)
+						),
+						h("button", { className: "vk_mgrBtn", onClick: () => setMarketDraft(null) }, "关闭")
+					),
+					h("div", { className: "vk_mgrAddForm", style: { marginTop: 10, marginBottom: 0 } },
+						h("div", { className: "vk_mgrLabel" }, "本地 serverName"),
+						h("input", { className: "vk_mgrInput", value: marketDraft.serverName, onChange: (e) => setMarketDraft({ ...marketDraft, serverName: e.target.value }), placeholder: "唯一标识" }),
+						marketDraft.entry.transport === "stdio" ? h("div", { className: "vk_mgrLabel" }, "附加启动参数（JSON 数组；请替换所有 <必填:...>）") : null,
+						marketDraft.entry.transport === "stdio" ? h("input", { className: "vk_mgrInput", value: marketDraft.extraArgs, onChange: (e) => setMarketDraft({ ...marketDraft, extraArgs: e.target.value }) }) : null,
+						(marketDraft.entry.transport === "stdio" ? marketDraft.entry.variables : marketDraft.entry.headers).map((field) => h("div", { key: field.name, className: "vk_marketField" },
+							h("div", { className: "vk_mgrLabel" }, field.name + (field.required ? "（必填）" : "（可选）") + (field.description ? " · " + field.description : "")),
+							h("input", { type: field.secret ? "password" : "text", className: "vk_mgrInput", value: marketDraft.values[field.name] || "", onChange: (e) => setMarketDraft({ ...marketDraft, values: { ...marketDraft.values, [field.name]: e.target.value } }), placeholder: field.secret ? "仅写入本机，不会回显" : "" })
+						)),
+						h("div", { className: "vk_personaFoot" },
+							h("span", { className: "vk_mgrLabel" }, "安装后默认为关闭状态；确认配置后再到“已安装”中开启。"),
+							h("div", { style: { flex: 1 } }),
+							h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: !!busy || !marketDraft.serverName.trim(), onClick: submitMarketInstall }, busy === "market-install" ? "写入中…" : "安装（保持关闭）")
+						)
+					)
+				) : null,
+				market === null ? h("div", { className: "vk_mgrEmpty" }, "加载 MCP 市场中…")
+					: market.entries.length === 0 ? h("div", { className: "vk_mgrEmpty" }, "没有匹配的兼容 MCP")
+					: h("div", { className: "vk_mgrList" }, market.entries.map((entry) => {
+						const installed = entry.transport === "stdio" ? installedPackages.has(entry.package) : installedUrls.has(entry.url);
+						return h("div", { key: entry.id, className: "vk_mgrRow" },
+							h("div", { className: "vk_mgrInfo" },
+								h("div", { className: "vk_mgrName" }, entry.name),
+								h("div", { className: "vk_mgrMeta" }, (entry.transport === "stdio" ? entry.package + "@" + entry.packageVersion : entry.url) + (entry.description ? " · " + entry.description : ""))
+							),
+							entry.isOfficial ? h("span", { className: "vk_mgrBadge vk_marketOfficial" }, "Registry") : null,
+							installed ? h("span", { className: "vk_mgrBadge vk_mgrBadgeOn" }, "已安装") : null,
+							h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", disabled: !!busy || installed, onClick: () => openMarketInstall(entry) }, installed ? "已安装" : "配置并安装")
+						);
+					}))
+			);
+			return h("div", { className: "vk_personaSection" },
+				h("div", { className: "vk_mgrTabs" },
+					h("button", { className: "vk_mgrTab" + (tab === "installed" ? " vk_mgrTabOn" : ""), onClick: () => { setTab("installed"); setErr(null); } }, "已安装"),
+					h("button", { className: "vk_mgrTab" + (tab === "market" ? " vk_mgrTabOn" : ""), onClick: () => { setTab("market"); setErr(null); } }, "MCP 市场")
+				),
+				err !== null ? h("div", { className: "vk_personaMsg vk_personaMsgErr" }, String(err)) : null,
+				restartNeeded ? h("div", { className: "vk_personaFoot" },
+					h("span", { className: "vk_personaMsg vk_personaMsgOk" }, "MCP 配置已保存，重启服务后生效。"),
+					h("div", { style: { flex: 1 } }),
+					typeof window.dshDesktop?.restartService === "function"
+						? h("button", { className: "vk_mgrBtn vk_mgrBtnPrimary", onClick: () => { if (window.confirm("重启会中断当前运行中的会话（历史记录保留）。确定重启吗？")) window.dshDesktop.restartService(); } }, "立即重启服务")
+						: null
+				) : null,
+				tab === "installed" ? installedView : marketView
 			);
 		}
 
@@ -1290,7 +1843,7 @@ window.__ModuleLoader__.load({
 					h("button", { className: "vk_railBtn" + (tab === "sessions" ? " vk_railBtnActive" : ""), title: "会话", onClick: () => { onTab("sessions"); onExpand(); } }, "☰"),
 					h("div", { className: "vk_railSpacer" }),
 					h("button", { className: "vk_railBtn", title: "展开侧边栏", onClick: onExpand }, "»"),
-					h("div", { style: { display: "none" } }, sessionSlot)
+					h("div", { className: "vk_settingsPin vk_settingsPinRail" }, sessionSlot)
 				);
 			}
 			return h("div", { className: "vk_colLeft" },
@@ -1300,8 +1853,8 @@ window.__ModuleLoader__.load({
 					h("div", { className: "vk_tabBarSpacer" }),
 					h("button", { className: "vk_tabBtn", title: "收起侧边栏", onClick: onCollapse }, "«")
 				),
-				h("div", { className: "vk_tabBody" + (tab === "files" ? "" : " vk_tabBodyHidden") }, tree),
-				h("div", { className: "vk_tabBody" + (tab === "sessions" ? "" : " vk_tabBodyHidden") }, sessionSlot)
+				h("div", { className: "vk_tabBody vk_filesBody" + (tab === "files" ? "" : " vk_tabBodyHidden") }, tree),
+				h("div", { className: tab === "sessions" ? "vk_tabBody" : "vk_settingsPin" }, sessionSlot)
 			);
 		}
 		function RightPanel({ tab, onTab, conversation, details, mode, onToggleMode, showDetails }) {
@@ -1636,7 +2189,7 @@ window.__ModuleLoader__.load({
 		// ──────────────────────────────────────────────────────────────
 		// 插件主体
 		// ──────────────────────────────────────────────────────────────
-		const inject = ["slots", "theme"];
+		const inject = ["slots", "theme", "modelDirectories"];
 		function apply(ctx) {
 			const layout = new LayoutController();
 			const pickFolder = async () => {
@@ -1673,6 +2226,7 @@ window.__ModuleLoader__.load({
 			}, "vscode-layout: service + root registration");
 			// 人设继续使用 EAC 的 soul.md；Skill/MCP 管理适配为 DSH_HOME
 			// 路径围栏 + 当前 web profile patch，不沿用上游的第二套 MCP 状态文件。
+			ctx.effect(() => installModelProviderActivation(ctx), "vscode-layout: model provider activation buttons");
 			ctx.effect(() => ctx.slots.inject("settings.section", () => ctx.slots.register({
 				name: "settings.section",
 				id: "skills",

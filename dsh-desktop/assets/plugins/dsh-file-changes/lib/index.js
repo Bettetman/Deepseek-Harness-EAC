@@ -10,6 +10,9 @@ import { zstdDecompressSync } from "node:zlib";
 import { withFileLock, writeFileAtomic } from "@deepseek-ai/dsh-atomic-write";
 import { isPathInside, pathKey, sameOriginMutation, validSegment } from "./ide-paths.js";
 import { addMcpEntry, deleteMcpEntry, listMcpEntries, toggleMcpEntry } from "./ide-management.js";
+import { installMarketSkill, listSkillMarket, previewMarketSkill, saveMarketConfig } from "./skill-market.js";
+import { listMcpMarket, prepareMcpMarketInstall, saveMcpMarketConfig } from "./mcp-market.js";
+import { deleteModelProfile, listModelCatalog, readModelProfiles, runningAgents, sameSelection, saveModelProfile, switchModelProfile, switchModelProvider } from "./model-profiles.js";
 
 const execFileP = promisify(execFile);
 
@@ -852,8 +855,41 @@ async function handleIdeRoute(ctx, req, res) {
       if (url.pathname === IDE_PREFIX + "/skills") {
         return sendJson(res, 200, { ok: true, root: "DSH_HOME/skills", skills: await listManagedSkills() });
       }
+      if (url.pathname === IDE_PREFIX + "/skills/market") {
+        const market = await listSkillMarket({ dshHome: dshHomeRoot(), refresh: url.searchParams.get("refresh") === "1" });
+        return sendJson(res, 200, { ok: true, ...market });
+      }
       if (url.pathname === IDE_PREFIX + "/mcp") {
         return sendJson(res, 200, { ok: true, source: "profiles/web/cordis.patch.yml", servers: listMcpEntries(await readWebPatch()) });
+      }
+      if (url.pathname === IDE_PREFIX + "/mcp/market") {
+        const market = await listMcpMarket({
+          dshHome: dshHomeRoot(),
+          refresh: url.searchParams.get("refresh") === "1",
+          query: url.searchParams.get("q") || "",
+        });
+        return sendJson(res, 200, { ok: true, ...market });
+      }
+      if (url.pathname === IDE_PREFIX + "/models/profiles") {
+        const current = ctx.agentDefaultModel.currentSelection();
+        const profiles = await readModelProfiles(dshHomeRoot());
+        const catalog = await listModelCatalog(ctx);
+        return sendJson(res, 200, {
+          ok: true,
+          current,
+          profiles: profiles.map((profile) => ({ ...profile, active: sameSelection(profile, current) })),
+          ...catalog,
+          running: runningAgents(ctx).length,
+        });
+      }
+      if (url.pathname === IDE_PREFIX + "/models/providers") {
+        const catalog = await listModelCatalog(ctx);
+        return sendJson(res, 200, {
+          ok: true,
+          current: ctx.agentDefaultModel.currentSelection(),
+          ...catalog,
+          running: runningAgents(ctx).length,
+        });
       }
       const root = await registeredWorkspaceRoot(ctx, url.searchParams.get("root") || "");
       const target = await existingWorkspaceTarget(root, url.searchParams.get("path") || "");
@@ -916,7 +952,7 @@ async function handleIdeRoute(ctx, req, res) {
 
     if (req.method !== "POST") throw httpError(405, "method not allowed");
     if (!sameOriginMutation(req)) throw httpError(403, "same-origin application/json request required");
-    const managementRoute = url.pathname.startsWith(IDE_PREFIX + "/skills/") || url.pathname.startsWith(IDE_PREFIX + "/mcp/");
+    const managementRoute = url.pathname.startsWith(IDE_PREFIX + "/skills/") || url.pathname.startsWith(IDE_PREFIX + "/mcp/") || url.pathname.startsWith(IDE_PREFIX + "/models/");
     const body = await readJsonBody(req, managementRoute ? 256 * 1024 : 12 * 1024 * 1024);
     if (url.pathname === IDE_PREFIX + "/skills/toggle") {
       const enabled = await toggleManagedSkill(body?.id);
@@ -925,6 +961,18 @@ async function handleIdeRoute(ctx, req, res) {
     if (url.pathname === IDE_PREFIX + "/skills/delete") {
       await deleteManagedSkill(body?.id);
       return sendJson(res, 200, { ok: true });
+    }
+    if (url.pathname === IDE_PREFIX + "/skills/market/preview") {
+      const preview = await previewMarketSkill({ dshHome: dshHomeRoot(), source: body?.source, skillId: body?.skillId });
+      return sendJson(res, 200, { ok: true, preview });
+    }
+    if (url.pathname === IDE_PREFIX + "/skills/market/install") {
+      const installed = await installMarketSkill({ dshHome: dshHomeRoot(), source: body?.source, skillId: body?.skillId });
+      return sendJson(res, 200, { ok: true, installed });
+    }
+    if (url.pathname === IDE_PREFIX + "/skills/market/config") {
+      const config = await saveMarketConfig(dshHomeRoot(), body);
+      return sendJson(res, 200, { ok: true, config });
     }
     if (url.pathname === IDE_PREFIX + "/mcp/toggle") {
       try {
@@ -943,6 +991,40 @@ async function handleIdeRoute(ctx, req, res) {
         const result = await mutateWebPatch((patch) => addMcpEntry(patch, body));
         return sendJson(res, 200, { ok: true, entry: result.entry, restartRequired: true });
       } catch (error) { throw managementError(error); }
+    }
+    if (url.pathname === IDE_PREFIX + "/mcp/market/config") {
+      const config = await saveMcpMarketConfig(dshHomeRoot(), body);
+      return sendJson(res, 200, { ok: true, config });
+    }
+    if (url.pathname === IDE_PREFIX + "/mcp/market/install") {
+      const prepared = await prepareMcpMarketInstall(dshHomeRoot(), body);
+      try {
+        const result = await mutateWebPatch((patch) => addMcpEntry(patch, prepared.config));
+        return sendJson(res, 200, { ok: true, entry: result.entry, market: prepared.entry, restartRequired: true, enabled: false });
+      } catch (error) { throw managementError(error); }
+    }
+    if (url.pathname === IDE_PREFIX + "/models/profiles/save") {
+      const selection = {
+        provider: body?.provider,
+        model: body?.model,
+        ...(body?.reasoningEffort ? { reasoningEffort: body.reasoningEffort } : {}),
+      };
+      try { await ctx.llm.resolveCallConfig(selection); }
+      catch (error) { throw httpError(400, `模型配置不可用：${String(error?.message || error)}`); }
+      const profile = await saveModelProfile(dshHomeRoot(), body);
+      return sendJson(res, 200, { ok: true, profile });
+    }
+    if (url.pathname === IDE_PREFIX + "/models/profiles/delete") {
+      await deleteModelProfile(dshHomeRoot(), body?.id);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (url.pathname === IDE_PREFIX + "/models/profiles/switch") {
+      const switched = await switchModelProfile(ctx, dshHomeRoot(), body?.id);
+      return sendJson(res, 200, { ok: true, ...switched });
+    }
+    if (url.pathname === IDE_PREFIX + "/models/providers/switch") {
+      const switched = await switchModelProvider(ctx, body?.provider);
+      return sendJson(res, 200, { ok: true, ...switched });
     }
     const root = await registeredWorkspaceRoot(ctx, body?.root);
     if (url.pathname === IDE_PREFIX + "/write") {
@@ -994,7 +1076,7 @@ async function handleIdeRoute(ctx, req, res) {
 }
 
 const name = "dsh-file-changes";
-const inject = ["sessionProjections", "webServer", "workspaceRegistry"];
+const inject = ["sessionProjections", "webServer", "workspaceRegistry", "llm", "agents", "agentDefaultModel"];
 
 function apply(ctx) {
   ctx.sessionProjections.register(fileChangesProjectionDefinition);

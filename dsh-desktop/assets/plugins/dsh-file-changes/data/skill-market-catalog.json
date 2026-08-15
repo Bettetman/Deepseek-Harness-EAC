@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T00:00:00.000Z",
+  "entries": [
+    { "source": "vercel-labs/skills", "skillId": "find-skills", "name": "find-skills", "description": "帮助查找适合当前任务的 Agent Skill。", "installs": 2962019, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "frontend-design", "name": "frontend-design", "description": "设计并实现有辨识度的高质量前端界面。", "installs": 1800000, "isOfficial": true },
+    { "source": "vercel-labs/agent-browser", "skillId": "agent-browser", "name": "agent-browser", "description": "使用浏览器自动化完成页面操作与验证。", "installs": 1500000, "isOfficial": true },
+    { "source": "vercel-labs/agent-skills", "skillId": "vercel-react-best-practices", "name": "vercel-react-best-practices", "description": "Vercel 总结的 React 与 Next.js 性能实践。", "installs": 1300000, "isOfficial": true },
+    { "source": "mattpocock/skills", "skillId": "tdd", "name": "tdd", "description": "以测试驱动方式开发和重构代码。", "installs": 900000, "isOfficial": false },
+    { "source": "anthropics/skills", "skillId": "skill-creator", "name": "skill-creator", "description": "创建结构清晰、可复用的 Agent Skill。", "installs": 800000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "mcp-builder", "name": "mcp-builder", "description": "设计和构建 MCP 服务。", "installs": 720000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "pdfs", "name": "pdfs", "description": "读取、创建与处理 PDF 文档。", "installs": 680000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "spreadsheets", "name": "spreadsheets", "description": "创建、编辑并分析电子表格。", "installs": 650000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "docs", "name": "docs", "description": "创建、编辑并检查文本文档。", "installs": 620000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "slides", "name": "slides", "description": "创建和编辑演示文稿。", "installs": 590000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "web-artifacts-builder", "name": "web-artifacts-builder", "description": "构建可交互的 Web 成品与组件。", "installs": 520000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "canvas-design", "name": "canvas-design", "description": "制作画布类视觉设计作品。", "installs": 470000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "brand-guidelines", "name": "brand-guidelines", "description": "将品牌规范应用到内容和设计中。", "installs": 430000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "theme-factory", "name": "theme-factory", "description": "为文档、网页和演示生成一致主题。", "installs": 390000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "algorithmic-art", "name": "algorithmic-art", "description": "使用代码生成算法艺术。", "installs": 350000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "internal-comms", "name": "internal-comms", "description": "撰写团队内部沟通材料。", "installs": 320000, "isOfficial": true },
+    { "source": "vercel-labs/agent-skills", "skillId": "web-design-guidelines", "name": "web-design-guidelines", "description": "依据 Web 设计准则检查和改进界面。", "installs": 300000, "isOfficial": true },
+    { "source": "vercel-labs/agent-skills", "skillId": "composition-patterns", "name": "composition-patterns", "description": "应用可扩展的 React 组件组合模式。", "installs": 260000, "isOfficial": true },
+    { "source": "anthropics/skills", "skillId": "webapp-testing", "name": "webapp-testing", "description": "测试本地 Web 应用的交互和行为。", "installs": 230000, "isOfficial": true }
+  ]
+}

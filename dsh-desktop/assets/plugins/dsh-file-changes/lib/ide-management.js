@@ -72,6 +72,19 @@ function mcpRows(patch) {
 function publicMcp(row) {
   const transport = fieldOf(row.lines, "transport") === "streamable-http" ? "streamable-http" : "stdio";
   const serverName = String(fieldOf(row.lines, "serverName") || row.id.replace(/^mcp-/, ""));
+  let marketPackage = "";
+  if (transport === "stdio") {
+    const rawArgs = String(fieldOf(row.lines, "args") || "");
+    try {
+      const args = JSON.parse(rawArgs);
+      const candidate = Array.isArray(args) ? args.find((arg) => /^(?:@[A-Za-z0-9._-]+\/)?[A-Za-z0-9._-]+@[^@]+$/.test(String(arg))) : undefined;
+      if (candidate) {
+        const value = String(candidate);
+        const versionAt = value.lastIndexOf("@");
+        marketPackage = versionAt > 0 ? value.slice(0, versionAt) : value;
+      }
+    } catch {}
+  }
   return {
     id: row.id,
     serverName,
@@ -80,6 +93,7 @@ function publicMcp(row) {
     url: transport === "streamable-http" ? String(fieldOf(row.lines, "url") || "") : "",
     enabled: fieldOf(row.lines, "disabled") !== true,
     hasEnv: row.lines.some((line) => /^\s*(env|headers):\s*/.test(line)),
+    marketPackage,
   };
 }
 
@@ -149,13 +163,13 @@ function normalizeMcpInput(input) {
   if (transport === "stdio") {
     const command = typeof input?.command === "string" ? input.command.trim() : "";
     if (!command || command.length > 4096 || /[\r\n]/.test(command)) throw new Error("stdio MCP needs a valid command");
-    return { id: `mcp-${serverName}`, serverName, transport, command, args, env };
+    return { id: `mcp-${serverName}`, serverName, transport, command, args, env, enabled: input?.enabled !== false };
   }
   const rawUrl = typeof input?.url === "string" ? input.url.trim() : "";
   let url;
   try { url = new URL(rawUrl); } catch { throw new Error("streamable-http MCP needs a valid URL"); }
   if (!/^https?:$/.test(url.protocol) || rawUrl.length > 4096) throw new Error("MCP URL must use http or https");
-  return { id: `mcp-${serverName}`, serverName, transport, url: rawUrl, headers };
+  return { id: `mcp-${serverName}`, serverName, transport, url: rawUrl, headers, enabled: input?.enabled !== false };
 }
 
 function serializeMcpRow(config) {
@@ -163,6 +177,7 @@ function serializeMcpRow(config) {
   const lines = [
     "- insert:",
     `    - id: ${config.id}`,
+    ...(config.enabled ? [] : ["      disabled: true"]),
     `      name: '${MCP_PACKAGE}'`,
     "      config:",
     `        transport: ${config.transport}`,

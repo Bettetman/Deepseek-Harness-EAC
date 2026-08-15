@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-15T00:00:00.000Z",
+  "entries": [
+    {
+      "id": "io.modelcontextprotocol/server-filesystem",
+      "name": "Filesystem",
+      "description": "在指定目录范围内安全读写本机文件。安装前必须填写允许访问的目录。",
+      "package": "@modelcontextprotocol/server-filesystem",
+      "version": "latest",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "isOfficial": true,
+      "packageArguments": [{ "type": "positional", "name": "允许访问的目录", "isRequired": true, "description": "建议填写绝对路径。" }]
+    },
+    {
+      "id": "io.modelcontextprotocol/server-memory",
+      "name": "Memory",
+      "description": "提供基于知识图谱的持久记忆工具。",
+      "package": "@modelcontextprotocol/server-memory",
+      "version": "latest",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "isOfficial": true
+    },
+    {
+      "id": "io.modelcontextprotocol/server-sequential-thinking",
+      "name": "Sequential Thinking",
+      "description": "为复杂问题提供分步思考与修正工具。",
+      "package": "@modelcontextprotocol/server-sequential-thinking",
+      "version": "latest",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "isOfficial": true
+    },
+    {
+      "id": "io.modelcontextprotocol/server-everything",
+      "name": "Everything（测试）",
+      "description": "MCP 协议能力演示服务器，适合测试客户端兼容性。",
+      "package": "@modelcontextprotocol/server-everything",
+      "version": "latest",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "isOfficial": true
+    },
+    {
+      "id": "com.microsoft/playwright-mcp",
+      "name": "Playwright MCP",
+      "description": "通过 Playwright 控制浏览器并读取页面结构。",
+      "package": "@playwright/mcp",
+      "version": "latest",
+      "repository": "https://github.com/microsoft/playwright-mcp",
+      "isOfficial": true
+    },
+    {
+      "id": "com.upstash/context7-mcp",
+      "name": "Context7",
+      "description": "检索最新的库文档与代码示例。",
+      "package": "@upstash/context7-mcp",
+      "version": "latest",
+      "repository": "https://github.com/upstash/context7",
+      "isOfficial": false,
+      "variables": [{ "name": "CONTEXT7_API_KEY", "description": "可选的 Context7 API Key", "isSecret": true }]
+    },
+    {
+      "id": "com.notion/notion-mcp-server",
+      "name": "Notion MCP",
+      "description": "连接 Notion API 读写页面与数据库。",
+      "package": "@notionhq/notion-mcp-server",
+      "version": "latest",
+      "repository": "https://github.com/makenotion/notion-mcp-server",
+      "isOfficial": false,
+      "variables": [{ "name": "OPENAPI_MCP_HEADERS", "description": "Notion Authorization 与版本请求头的 JSON 字符串", "isRequired": true, "isSecret": true }]
+    }
+  ]
+}

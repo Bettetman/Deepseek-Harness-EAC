@@ -1,4 +1,4 @@
-﻿# Deepseek Harness EAC（揽尽万象 · Embracing All Creation）
+﻿# DeepSeek Harness Desktop
 
 把 [@deepseek-ai/dsh](https://www.npmjs.com/package/@deepseek-ai/dsh)（DeepSeek Harness）封装成开箱即用的 Windows 桌面客户端。
 
@@ -24,14 +24,14 @@
 ## 快速开始（成品用户）
 
 1. 打开 [Releases](https://github.com/zouyuxuan122/Deepseek-Harness-EAC/releases/latest) 页面，选其一：
-   - `Deepseek-Harness-EAC-v2.0.1-Portable-x64.exe` —— 免安装便携版，双击运行
-   - `Deepseek-Harness-EAC-v2.0.1-Setup-x64.exe` —— 安装版，创建桌面/开始菜单快捷方式
+   - `DeepSeek-Harness-Desktop-v3.0.1-Portable-x64.exe` —— 免安装便携版，双击运行
+   - `DeepSeek-Harness-Desktop-v3.0.1-Setup-x64.exe` —— 安装版，创建桌面/开始菜单快捷方式
 2. 首次运行会显示启动动画，随后进入 DeepSeek Harness Web UI。
 3. 如尚未配置 API Key，在界面内完成配置即可开始使用（与命令行 dsh 完全一致）。
 
 > ⚠️ **务必安装到纯英文路径**（如默认的 `C:\Users\<你>\AppData\Local\Programs\`）：中文路径（如 `D:\迅雷下载\`）会触发 Chromium 渲染进程原生崩溃，窗口弹出数秒后自动退出。
 >
-> 便携版的数据目录是 exe 旁的 `data\`；安装版在 `%APPDATA%\Deepseek Harness EAC v2.0\`。
+> 便携版的数据目录是 exe 旁的 `data\`；全新安装版在 `%APPDATA%\DeepSeek Harness Desktop\`。从 EAC v2.0 升级时自动沿用旧数据目录。
 > 若想强制指定 DSH 配置目录，启动前设置环境变量 `DSH_HOME` 即可（与 dsh CLI 行为一致）。
 
 ## 跟随官方更新（用户同意后自动更新）
@@ -49,7 +49,7 @@
 - 发现新版本时弹窗询问：**立即更新 / 跳过此版本 / 稍后**；同意后带进度条下载安装包（便携版选 `*-portable-x64.exe`，安装版选 `Setup-*-x64.exe`；Gitee 因单文件 100MB 限制拆分的 `.part1/.part2` 分片会自动按序下载并合并），下载到 `<数据目录>\updates\`。
 - 确认重启后：**便携版**用 detached 脚本等待旧 exe 解锁 → 备份 → 原地替换 → 自动启动新版本（只读目录自动退化为直接启动新 exe）；**安装版**等待进程退出后以向导方式启动新安装包。失败自动保留当前版本，下次启动继续提示待安装更新。
 - 菜单入口：chrome 栏 ⋯ 菜单 →「检查客户端更新…」；托盘菜单同样可用。跳过版本记录在 `settings.json`（`skipClientVersion`）。
-- **更新源可见可复制**：⋯ 菜单内「更新源」区块与「关于 Deepseek Harness EAC v1.0」对话框展示项目仓库地址（GitHub），一键复制到剪贴板。
+- **更新源可见可复制**：⋯ 菜单内「更新源」区块与「关于 DeepSeek Harness Desktop」对话框展示项目仓库地址（GitHub），一键复制到剪贴板。
 - 链路自检：`node scripts/check-client-latest.js [--download]`（可设 `DSH_DESKTOP_RELEASE_API` / `PORTABLE_EXECUTABLE_DIR`）。
 
 ## DeepSeek 余额小部件
@@ -70,8 +70,9 @@
 - 文件树支持懒加载、隐藏项折叠、递归搜索、Git `M/A/D/R/U` 角标、新建文件/文件夹、行内重命名和可恢复删除（Windows 回收站 / macOS 废纸篓 / Linux `gio trash`）；手动选择目录后会通过官方 `workspaces.create()` 登记为 DSH 工作区。
 - 查看器支持 Shiki 明暗主题高亮、行号、最多 20 个持久化标签、拖拽排序和右键菜单；文本文件可编辑，`Ctrl+S` 使用同目录临时文件原子替换，并在保存前校验版本，检测到外部修改时拒绝覆盖。
 - 宿主接口位于 `/vscode-files/*`，只允许访问 `workspaceRegistry` 已登记工作区；通过 `realpath` 围栏阻止符号链接/前缀目录越界，写请求要求同源 JSON，并设置文件大小、搜索深度与结果数上限。
-- 设置页「Skill 管理」只接受 `DSH_HOME/skills` 下的顶层条目 ID，支持启停及送入系统回收站删除，不接受浏览器传入任意绝对路径。
+- 设置页「Skill 管理」包含“已安装 / Skill 市场”：已安装页只接受 `DSH_HOME/skills` 下的顶层条目 ID，支持启停及送入系统回收站删除；市场页可搜索 skills.sh 生态、预览 `SKILL.md` 并安装。目录支持缓存、内置离线快照、国内/自建镜像和 GitHub API 加速地址；安装固定 commit 并校验路径、大小、链接类型与 Git blob 哈希，不执行仓库脚本，首次安装默认关闭。
 - 设置页「MCP 管理」直接列出并修改 `profiles/web/cordis.patch.yml` 中的 `@deepseek-ai/dsh-mcp-client` 行，支持 stdio / streamable-http 添加、开关、删除与一键重启；环境变量和请求头不会在列表中回显，写入使用 writer lock + 原子替换。
+- 设置页「模型管理」可同时维护多家供应商、API 地址、密钥和模型列表；相邻「模型切换」页可保存不含密钥的命名方案并一键切换当前会话与全局默认。任一主任务或子 Agent 正在运行时，客户端锁定切换按钮且宿主再次拒绝切换。
 - 迁移自用户导入的 `dsh-vscode-layout-master`（anoslide，MIT）。EAC 未迁移其中重复的人设、桌面启动器、官方包覆盖补丁和图片桥接，继续使用项目已有实现。
 
 ## 文件更改追踪与回退
